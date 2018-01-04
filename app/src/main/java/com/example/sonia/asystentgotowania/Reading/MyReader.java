@@ -17,7 +17,7 @@ public class MyReader {
     private static final String TAG = MyReader.class.getSimpleName();
     public final static int STATUS_SPEAKING = 1;
     public final static int STATUS_NOT_SPEAKING = 0;
-    public int status;
+    public IntToListen mMyReaderStatus;
 
     private Context mContext;
     private final String FILENAME = "/wpta_tts.wav";
@@ -27,14 +27,14 @@ public class MyReader {
     private MediaPlayer.OnCompletionListener mediaPlayerCompletionListener = new MediaPlayer.OnCompletionListener() {
         @Override
         public void onCompletion(MediaPlayer mp) {
-            //TODO jakos dac znac ikonce zeby sie zmienila na "play"
-            //mozliwe ze nie bedzie potrzebne, moze da sie zbindowac bezposrednio do mediaplayer
+            Log.i(TAG, "media finnished");
+            mMyReaderStatus.setValue(STATUS_NOT_SPEAKING);
         }
     };
 
     public MyReader(Context context) {
         mContext = context;
-        status = STATUS_NOT_SPEAKING;
+        mMyReaderStatus = new IntToListen(STATUS_NOT_SPEAKING);
         mMediaPlayer = new MediaPlayer();
         initializeMediaPlayer();
         initializeTextToSpeech();
@@ -42,14 +42,7 @@ public class MyReader {
     }
 
     public void read() {
-        String toSpeak = "Spód migdałowo - cynamonowy: \n" +
-                "150 g zmielonych migdałów \n" +
-                "50 g cukru pudru \n" +
-                "1 duże białko (40 g)\n" +
-                "25 g mąki pszennej \n" +
-                "1 łyżeczka cynamonu \n" +
-                "25 g masła, roztopionego ";
-
+        String toSpeak = "Spód migdałowo - cynamonowy:";
 
         File destinationFile = new File(mContext.getExternalCacheDir().getAbsolutePath(), FILENAME);
         String utteranceID = "wpta";
@@ -59,31 +52,13 @@ public class MyReader {
             params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
             mTextToSpeech.synthesizeToFile(toSpeak, params, destinationFile, utteranceID);
         } else {
-            mMediaPlayer.start();
+            playMedia();
         }
 
     }
 
     public void pauseReading() {
-        mMediaPlayer.pause();
-    }
-
-    public int getStatus() {
-        return mMediaPlayer.isPlaying() ? STATUS_SPEAKING : STATUS_NOT_SPEAKING;
-    }
-
-    public void killReader() {
-        // Stop the TextToSpeech Engine
-        mTextToSpeech.stop();
-
-        // Shutdown the TextToSpeech Engine
-        mTextToSpeech.shutdown();
-
-        // Stop the MediaPlayer
-        mMediaPlayer.stop();
-
-        // Release the MediaPlayer
-        mMediaPlayer.release();
+        pauseMedia();
     }
 
 
@@ -97,7 +72,6 @@ public class MyReader {
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build());
-
         try {
             mMediaPlayer.setDataSource(mContext.getApplicationContext(), uri);
             mMediaPlayer.prepare();
@@ -128,7 +102,7 @@ public class MyReader {
                 Log.d(TAG, "wywołałem media");
 
                 // Start Playing Speech
-                mMediaPlayer.start();
+                playMedia();
             }
 
             @Override
@@ -143,4 +117,38 @@ public class MyReader {
             }
         });
     }
+
+    private void playMedia() {
+        mMyReaderStatus.setValue(STATUS_SPEAKING);
+        mMediaPlayer.start();
+    }
+
+    private void pauseMedia() {
+        mMyReaderStatus.setValue(STATUS_NOT_SPEAKING);
+        mMediaPlayer.pause();
+    }
+
+    public int getmMyReaderStatus() {
+        return mMyReaderStatus.getValue();
+    }
+
+    public IntToListen getStatusObservable() {
+        return mMyReaderStatus;
+    }
+
+    public void killReader() {
+        // Stop the TextToSpeech Engine
+        mTextToSpeech.stop();
+
+        // Shutdown the TextToSpeech Engine
+        mTextToSpeech.shutdown();
+
+        // Stop the MediaPlayer
+        pauseMedia();
+
+        // Release the MediaPlayer
+        mMediaPlayer.release();
+    }
+
+
 }

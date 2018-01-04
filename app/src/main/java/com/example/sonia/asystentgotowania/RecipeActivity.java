@@ -3,10 +3,14 @@ package com.example.sonia.asystentgotowania;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 
 import com.example.sonia.asystentgotowania.Reading.MyReader;
+
+import java.util.Observable;
+import java.util.Observer;
 
 import butterknife.BindDrawable;
 import butterknife.BindView;
@@ -33,6 +37,27 @@ public class RecipeActivity extends AppCompatActivity {
     Drawable mplayIcon;
 
     MyReader mmyReader;
+    Observer mStatusObserver = new Observer() {
+        @Override
+        public void update(Observable observable, Object o) {
+            try {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        int a = mmyReader.getmMyReaderStatus();
+                        if (a == MyReader.STATUS_NOT_SPEAKING) {
+                            mbtnPlayPause.setBackground(mplayIcon);
+                        } else if (a == MyReader.STATUS_SPEAKING) {
+                            mbtnPlayPause.setBackground(mpauseIcon);
+                        }
+                    }
+                });
+
+            } catch (Exception e) {
+                Log.e(TAG, "error msg:", e);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +66,7 @@ public class RecipeActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         mmyReader = new MyReader(getApplicationContext());
+        mmyReader.getStatusObservable().addObserver(mStatusObserver);
     }
 
     @Override
@@ -49,15 +75,13 @@ public class RecipeActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-
     @OnClick(R.id.btnPlayPause)
-    public void readText(Button button) {
-        if (mmyReader.getStatus() == MyReader.STATUS_NOT_SPEAKING) {
+    public void readText() {
+        if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_NOT_SPEAKING) {
             mmyReader.read();
-            button.setBackground(mpauseIcon);
-        } else if (mmyReader.getStatus() == MyReader.STATUS_SPEAKING) {
-            button.setBackground(mplayIcon);
+        } else if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_SPEAKING) {
             mmyReader.pauseReading();
         }
     }
+
 }
