@@ -8,10 +8,10 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.example.sonia.asystentgotowania.reading.MyJSONhelper;
 import com.example.sonia.asystentgotowania.reading.MyReader;
 import com.example.sonia.asystentgotowania.recipefromlink.RecipeFromLink;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Observable;
@@ -41,6 +41,9 @@ public class RecipeActivity extends AppCompatActivity {
     @BindDrawable(R.drawable.ic_play)
     Drawable mplayIcon;
 
+
+    String mIngredientsText;
+    String mPreparationText;
     MyReader mmyReader;
     Observer mStatusObserver = new Observer() {
         @Override
@@ -70,39 +73,37 @@ public class RecipeActivity extends AppCompatActivity {
         setContentView(R.layout.view_recipe);
         ButterKnife.bind(this);
 
-        mmyReader = new MyReader(getApplicationContext());
-        mmyReader.getStatusObservable().addObserver(mStatusObserver);
-
         Intent intent = getIntent();
         String action = intent.getAction();
         String type = intent.getType();
 
+        //recipe from internet
         if (Intent.ACTION_SEND.equals(action) && type != null && "text/plain".equals(type)) {
             getRecipeFormLink(intent); // Handle text being sent
+        } else {
+            mIngredientsText = "mąka\n sól\n woda\n wino\n";
+            mPreparationText = "zmieszaj mąkę i wodę. \nNalej sobie kieliszek wina. \n" +
+                    "mieszaj dalej popijając wino,\n ono nie jest do przepisu a dla Ciebie.\n";
         }
+        setRecipeTexts();
+
+        mmyReader = new MyReader(getApplicationContext(), "składniki:\n" + mIngredientsText,
+                "przygotowanie:\n" + mPreparationText);
+        mmyReader.getStatusObservable().addObserver(mStatusObserver);
     }
 
     private void getRecipeFormLink(Intent intent) {
         String link = intent.getStringExtra(Intent.EXTRA_TEXT);
         if (link != null) {
             JSONObject recipeJson = RecipeFromLink.getRecipeInJSONFromLink(link);
-            if (recipeJson != null) {
-                String strIngreds = "";
-                String strprepare = "";
-                try {
-                    strIngreds = recipeJson.getString(Constants.JSON_RECIPE_INGREDIENTS);
-                } catch (JSONException e) {
-                    Log.e(TAG, "JSON error, no ingreds in recipe:", e);
-                }
-                try {
-                    strprepare = recipeJson.getString(Constants.JSON_RECIPE_PREPARATION);
-                } catch (JSONException e) {
-                    Log.e(TAG, "JSON error, no prepare in recipe:", e);
-                }
-                metIngredients.setText(strIngreds);
-                metRecipe.setText(strprepare);
-            }
+            mIngredientsText = MyJSONhelper.getIngredientsFromJSON(recipeJson);
+            mPreparationText = MyJSONhelper.getPreparationFromJSON(recipeJson);
         }
+    }
+
+    private void setRecipeTexts() {
+        metIngredients.setText(mIngredientsText);
+        metRecipe.setText(mPreparationText);
     }
 
     @Override

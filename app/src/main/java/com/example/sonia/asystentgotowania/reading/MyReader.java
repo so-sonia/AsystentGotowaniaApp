@@ -9,6 +9,8 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.util.Locale;
 
@@ -17,11 +19,16 @@ public class MyReader {
     private static final String TAG = MyReader.class.getSimpleName();
     public final static int STATUS_SPEAKING = 1;
     public final static int STATUS_NOT_SPEAKING = 0;
-    public IntToListen mMyReaderStatus;
+
+    public MyObservableBoolean mShouldReadIngredients = new MyObservableBoolean(true);
+    public MyObservableBoolean mShouldReadPreparation = new MyObservableBoolean(true);
+    private boolean mIsInTheMiddleOfReading = false;
+    public IntToListen mMyReaderStatus; //to chyba to samo co mIsInTheMiddleOfReading?
+    String mIngredientsText;
+    String mPreparationText;
 
     private Context mContext;
     private final String FILENAME = "/wpta_tts.wav";
-    private boolean mProcessed = false;
     private TextToSpeech mTextToSpeech;
     private MediaPlayer mMediaPlayer;
     private MediaPlayer.OnCompletionListener mediaPlayerCompletionListener = new MediaPlayer.OnCompletionListener() {
@@ -32,22 +39,30 @@ public class MyReader {
         }
     };
 
-    public MyReader(Context context) {
+    public MyReader(Context context, String ingredientsText, String preparationText) {
         mContext = context;
         mMyReaderStatus = new IntToListen(STATUS_NOT_SPEAKING);
         mMediaPlayer = new MediaPlayer();
         initializeMediaPlayer();
         initializeTextToSpeech();
         mMediaPlayer.setOnCompletionListener(mediaPlayerCompletionListener);
+        mIngredientsText = ingredientsText;
+        mPreparationText = preparationText;
     }
 
     public void read() {
-        String toSpeak = "Spód migdałowo - cynamonowy:";
+        if (!mIsInTheMiddleOfReading) {
+            String toSpeak = "";
+            if(mShouldReadIngredients.getValue()){
+                toSpeak = toSpeak.concat(mIngredientsText + "\n");
+            }
+            if(mShouldReadPreparation.getValue()){
+                toSpeak = toSpeak.concat(mPreparationText+ "\n");
+            }
+            Log.i(TAG, "to speak: " + toSpeak);
 
-        File destinationFile = new File(mContext.getExternalCacheDir().getAbsolutePath(), FILENAME);
-        String utteranceID = "wpta";
-
-        if (!mProcessed) {
+            File destinationFile = new File(mContext.getExternalCacheDir().getAbsolutePath(), FILENAME);
+            String utteranceID = "wpta";
             Bundle params = new Bundle();
             params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
             mTextToSpeech.synthesizeToFile(toSpeak, params, destinationFile, utteranceID);
@@ -95,7 +110,7 @@ public class MyReader {
 
                 Log.d(TAG, "juz zrobiłem plik");
                 // Speech file is created
-                mProcessed = true;
+                mIsInTheMiddleOfReading = true;
 
                 // Initializes Media Player
                 initializeMediaPlayer();
