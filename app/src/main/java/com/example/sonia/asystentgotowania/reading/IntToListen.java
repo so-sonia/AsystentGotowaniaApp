@@ -1,4 +1,4 @@
-package com.example.sonia.asystentgotowania.Reading;
+package com.example.sonia.asystentgotowania.reading;
 
 import java.util.Observable;
 

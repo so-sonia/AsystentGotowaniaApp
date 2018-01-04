@@ -1,5 +1,6 @@
 package com.example.sonia.asystentgotowania;
 
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -7,7 +8,11 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.example.sonia.asystentgotowania.Reading.MyReader;
+import com.example.sonia.asystentgotowania.reading.MyReader;
+import com.example.sonia.asystentgotowania.recipefromlink.RecipeFromLink;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Observable;
 import java.util.Observer;
@@ -67,6 +72,37 @@ public class RecipeActivity extends AppCompatActivity {
 
         mmyReader = new MyReader(getApplicationContext());
         mmyReader.getStatusObservable().addObserver(mStatusObserver);
+
+        Intent intent = getIntent();
+        String action = intent.getAction();
+        String type = intent.getType();
+
+        if (Intent.ACTION_SEND.equals(action) && type != null && "text/plain".equals(type)) {
+            getRecipeFormLink(intent); // Handle text being sent
+        }
+    }
+
+    private void getRecipeFormLink(Intent intent) {
+        String link = intent.getStringExtra(Intent.EXTRA_TEXT);
+        if (link != null) {
+            JSONObject recipeJson = RecipeFromLink.getRecipeInJSONFromLink(link);
+            if (recipeJson != null) {
+                String strIngreds = "";
+                String strprepare = "";
+                try {
+                    strIngreds = recipeJson.getString(Constants.JSON_RECIPE_INGREDIENTS);
+                } catch (JSONException e) {
+                    Log.e(TAG, "JSON error, no ingreds in recipe:", e);
+                }
+                try {
+                    strprepare = recipeJson.getString(Constants.JSON_RECIPE_PREPARATION);
+                } catch (JSONException e) {
+                    Log.e(TAG, "JSON error, no prepare in recipe:", e);
+                }
+                metIngredients.setText(strIngreds);
+                metRecipe.setText(strprepare);
+            }
+        }
     }
 
     @Override
