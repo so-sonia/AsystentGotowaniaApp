@@ -1,4 +1,4 @@
-package com.example.sonia.asystentgotowania.reading;
+package com.example.sonia.asystentgotowania.onerecipe.reading;
 
 import android.content.Context;
 import android.media.AudioAttributes;

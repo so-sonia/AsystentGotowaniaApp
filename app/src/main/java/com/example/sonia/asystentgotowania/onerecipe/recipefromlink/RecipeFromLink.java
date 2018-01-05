@@ -1,4 +1,4 @@
-package com.example.sonia.asystentgotowania.recipefromlink;
+package com.example.sonia.asystentgotowania.onerecipe.recipefromlink;
 
 import android.util.Log;
 

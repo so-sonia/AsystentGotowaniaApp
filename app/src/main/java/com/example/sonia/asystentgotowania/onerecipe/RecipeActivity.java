@@ -1,4 +1,4 @@
-package com.example.sonia.asystentgotowania;
+package com.example.sonia.asystentgotowania.onerecipe;
 
 import android.content.Intent;
 import android.graphics.Color;
@@ -9,9 +9,10 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.example.sonia.asystentgotowania.reading.MyJSONhelper;
-import com.example.sonia.asystentgotowania.reading.MyReader;
-import com.example.sonia.asystentgotowania.recipefromlink.RecipeFromLink;
+import com.example.sonia.asystentgotowania.R;
+import com.example.sonia.asystentgotowania.onerecipe.reading.MyJSONhelper;
+import com.example.sonia.asystentgotowania.onerecipe.reading.MyReader;
+import com.example.sonia.asystentgotowania.onerecipe.recipefromlink.RecipeFromLink;
 
 import org.json.JSONObject;
 
