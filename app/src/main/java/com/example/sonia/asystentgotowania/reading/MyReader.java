@@ -9,8 +9,6 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 
-import org.json.JSONObject;
-
 import java.io.File;
 import java.util.Locale;
 
@@ -22,10 +20,10 @@ public class MyReader {
 
     public MyObservableBoolean mShouldReadIngredients = new MyObservableBoolean(true);
     public MyObservableBoolean mShouldReadPreparation = new MyObservableBoolean(true);
-    private boolean mIsInTheMiddleOfReading = false;
-    public IntToListen mMyReaderStatus; //to chyba to samo co mIsInTheMiddleOfReading?
-    String mIngredientsText;
-    String mPreparationText;
+    private boolean mProcessed = false;
+    private IntToListen mMyReaderStatus; //STATUS_SPEAKING or STATUS_NOT_SPEAKING
+    private String mIngredientsText;
+    private String mPreparationText;
 
     private Context mContext;
     private final String FILENAME = "/wpta_tts.wav";
@@ -40,10 +38,10 @@ public class MyReader {
     };
 
     public MyReader(Context context, String ingredientsText, String preparationText) {
+        Log.i(TAG, "new MyReader");
         mContext = context;
         mMyReaderStatus = new IntToListen(STATUS_NOT_SPEAKING);
         mMediaPlayer = new MediaPlayer();
-        initializeMediaPlayer();
         initializeTextToSpeech();
         mMediaPlayer.setOnCompletionListener(mediaPlayerCompletionListener);
         mIngredientsText = ingredientsText;
@@ -51,31 +49,32 @@ public class MyReader {
     }
 
     public void read() {
-        if (!mIsInTheMiddleOfReading) {
+        if (!mProcessed) {
             String toSpeak = "";
-            if(mShouldReadIngredients.getValue()){
+            if (mShouldReadIngredients.getValue()) {
                 toSpeak = toSpeak.concat(mIngredientsText + "\n");
             }
-            if(mShouldReadPreparation.getValue()){
-                toSpeak = toSpeak.concat(mPreparationText+ "\n");
+            if (mShouldReadPreparation.getValue()) {
+                toSpeak = toSpeak.concat(mPreparationText + "\n");
             }
             Log.i(TAG, "to speak: " + toSpeak);
 
             File destinationFile = new File(mContext.getExternalCacheDir().getAbsolutePath(), FILENAME);
+            Log.i(TAG, "file created");
             String utteranceID = "wpta";
             Bundle params = new Bundle();
             params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
+            Log.i(TAG, "params.putString ");
             mTextToSpeech.synthesizeToFile(toSpeak, params, destinationFile, utteranceID);
+            Log.i(TAG, "mTextToSpeech");
         } else {
             playMedia();
         }
-
     }
 
     public void pauseReading() {
         pauseMedia();
     }
-
 
     private void initializeMediaPlayer() {
         String fileName = mContext.getExternalCacheDir().getAbsolutePath() + FILENAME;
@@ -91,7 +90,7 @@ public class MyReader {
             mMediaPlayer.setDataSource(mContext.getApplicationContext(), uri);
             mMediaPlayer.prepare();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "media problem: ", e);
         }
     }
 
@@ -110,9 +109,10 @@ public class MyReader {
 
                 Log.d(TAG, "juz zrobiłem plik");
                 // Speech file is created
-                mIsInTheMiddleOfReading = true;
+                mProcessed = true;
 
                 // Initializes Media Player
+                mMediaPlayer.reset(); // to set source in media, media must be in idle state (Android Developer)
                 initializeMediaPlayer();
                 Log.d(TAG, "wywołałem media");
 
@@ -141,6 +141,23 @@ public class MyReader {
     private void pauseMedia() {
         mMyReaderStatus.setValue(STATUS_NOT_SPEAKING);
         mMediaPlayer.pause();
+    }
+
+    private void stopReading() {
+        Log.i(TAG, "stop reading");
+        if (mMediaPlayer.isPlaying()) {
+            pauseMedia();
+        }
+        mMediaPlayer.reset();
+        initializeMediaPlayer();
+        mProcessed = false;
+    }
+
+    public void readButtonsChanged(boolean readIngredients, boolean readPreparation) {
+        stopReading();
+        mShouldReadIngredients.setValue(readIngredients);
+        mShouldReadPreparation.setValue(readPreparation);
+        //read();
     }
 
     public int getmMyReaderStatus() {

@@ -1,6 +1,7 @@
 package com.example.sonia.asystentgotowania;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -27,8 +28,8 @@ public class RecipeActivity extends AppCompatActivity {
 
     @BindView(R.id.btnIngredients)
     Button mbtnIngredients;
-    @BindView(R.id.btnRecipe)
-    Button mbtnRecipe;
+    @BindView(R.id.btnPreparation)
+    Button mbtnPreparation;
     @BindView(R.id.etIngredients)
     EditText metIngredients;
     @BindView(R.id.etRecipe)
@@ -60,7 +61,21 @@ public class RecipeActivity extends AppCompatActivity {
                         }
                     }
                 });
-
+            } catch (Exception e) {
+                Log.e(TAG, "error msg:", e);
+            }
+        }
+    };
+    Observer mButtonsObserver = new Observer() {
+        @Override
+        public void update(Observable observable, Object o) {
+            try {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setButtonsColors();
+                    }
+                });
             } catch (Exception e) {
                 Log.e(TAG, "error msg:", e);
             }
@@ -82,14 +97,16 @@ public class RecipeActivity extends AppCompatActivity {
             getRecipeFormLink(intent); // Handle text being sent
         } else {
             mIngredientsText = "mąka\n sól\n woda\n wino\n";
-            mPreparationText = "zmieszaj mąkę i wodę. \nNalej sobie kieliszek wina. \n" +
-                    "mieszaj dalej popijając wino,\n ono nie jest do przepisu a dla Ciebie.\n";
+            mPreparationText = "zmieszaj mąkę i wodę. \nNalej sobie kieliszek wina. \n";
         }
-        setRecipeTexts();
+        setRecipeTextsInViews();
 
         mmyReader = new MyReader(getApplicationContext(), "składniki:\n" + mIngredientsText,
                 "przygotowanie:\n" + mPreparationText);
         mmyReader.getStatusObservable().addObserver(mStatusObserver);
+        mmyReader.mShouldReadPreparation.addObserver(mButtonsObserver);
+        mmyReader.mShouldReadIngredients.addObserver(mButtonsObserver);
+        setButtonsColors();
     }
 
     private void getRecipeFormLink(Intent intent) {
@@ -101,7 +118,7 @@ public class RecipeActivity extends AppCompatActivity {
         }
     }
 
-    private void setRecipeTexts() {
+    private void setRecipeTextsInViews() {
         metIngredients.setText(mIngredientsText);
         metRecipe.setText(mPreparationText);
     }
@@ -121,4 +138,26 @@ public class RecipeActivity extends AppCompatActivity {
         }
     }
 
+    @OnClick(R.id.btnIngredients)
+    public void readIngredientsButtonClicked() {
+        mmyReader.readButtonsChanged(!mmyReader.mShouldReadIngredients.getValue(), mmyReader.mShouldReadPreparation.getValue());
+    }
+
+    @OnClick(R.id.btnPreparation)
+    public void readPreparationButtonClicked() {
+        mmyReader.readButtonsChanged(mmyReader.mShouldReadIngredients.getValue(), !mmyReader.mShouldReadPreparation.getValue());
+    }
+
+    public void setButtonsColors() {
+        if (mmyReader.mShouldReadIngredients.getValue()) {
+            mbtnIngredients.setBackgroundColor(Color.GREEN);
+        } else {
+            mbtnIngredients.setBackgroundColor(Color.GRAY);
+        }
+        if (mmyReader.mShouldReadPreparation.getValue()) {
+            mbtnPreparation.setBackgroundColor(Color.GREEN);
+        } else {
+            mbtnPreparation.setBackgroundColor(Color.GRAY);
+        }
+    }
 }
