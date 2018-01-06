@@ -1,8 +1,6 @@
 package com.example.sonia.asystentgotowania.databaseforrecipes;
 
-import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 
 @Entity
@@ -13,20 +11,11 @@ public class RecipeEntity {
     private String ingredients;
     private String preparation;
 
-    //moze byc potrzebne w widoku allRecipes
-    //@Ignore
-    //Bitmap picture;
-
-
-    public RecipeEntity(String title, String ingredients, String preparation){
+    public RecipeEntity(String title, String ingredients, String preparation) {
         this.title = title;
         this.ingredients = ingredients;
         this.preparation = preparation;
     }
-
-
-
-
 
 
     public long getUid() {

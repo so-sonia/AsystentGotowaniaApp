@@ -2,12 +2,6 @@ package com.example.sonia.asystentgotowania.databaseforrecipes;
 
 import android.arch.persistence.room.Room;
 import android.content.Context;
-import android.util.Log;
-
-import com.example.sonia.asystentgotowania.onerecipe.RecipeActivity;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.util.List;
 
