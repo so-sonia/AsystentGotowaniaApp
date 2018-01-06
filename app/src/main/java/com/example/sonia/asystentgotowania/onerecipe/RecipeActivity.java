@@ -23,6 +23,7 @@ import butterknife.BindDrawable;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import butterknife.OnLongClick;
 
 public class RecipeActivity extends AppCompatActivity {
     private static final String TAG = RecipeActivity.class.getSimpleName();
@@ -89,16 +90,31 @@ public class RecipeActivity extends AppCompatActivity {
         setContentView(R.layout.view_recipe);
         ButterKnife.bind(this);
 
-        Intent intent = getIntent();
+        final Intent intent = getIntent();
         String action = intent.getAction();
         String type = intent.getType();
 
         //recipe from internet
         if (Intent.ACTION_SEND.equals(action) && type != null && "text/plain".equals(type)) {
-            getRecipeFormLink(intent); // Handle text being sent
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try  {
+                        getRecipeFormLink(intent); // Handle text being sent
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                     }
+                }
+            });
+            thread.start();
         } else {
             mIngredientsText = "mąka\n sól\n woda\n wino\n";
-            mPreparationText = "zmieszaj mąkę i wodę. \nNalej sobie kieliszek wina. \n";
+//            mPreparationText = "zmieszaj mąkę i wodę. \nNalej sobie kieliszek wina. \n";
+            mPreparationText = "Dynię obrać ze skórki, usunąć nasiona, miąższ pokroić w kostkę. Ziemniaki obrać i też pokroić w kostkę. \n" +
+                    "W większym garnku na maśle zeszklić pokrojoną w kosteczkę cebulę oraz obrany i pokrojony na plasterki czosnek. Dodać dynię i ziemniaki, doprawić solą, wsypać kurkumę i dodać imbir. Smażyć co chwilę mieszając przez ok. 5 minut.\n" +
+                    "Wlać gorący bulion, przykryć i zagotować. Zmniejszyć ogień do średniego i gotować przez ok. 10 minut. \n" +
+                    "Świeżego pomidora sparzyć, obrać, pokroić na ćwiartki, usunąć szypułki oraz nasiona z komór. Miąższ pokroić w kosteczkę i dodać do zupy. Pomidory z puszki są już gotowe do użycia, wystarczy dodać do potrawy.\n" +
+                    "Wymieszać i gotować przez 5 minut, do miękkości warzyw. Zmiksować w blenderze z dodatkiem mleka.\n";
         }
         setRecipeTextsInViews();
 
@@ -139,6 +155,9 @@ public class RecipeActivity extends AppCompatActivity {
             mmyReader.pauseReading();
         }
     }
+
+//    @OnLongClick(R.id.etIngredients)
+
 
     @OnClick(R.id.btnIngredients)
     public void readIngredientsButtonClicked() {

@@ -17,23 +17,37 @@ public class MyReader {
     private static final String TAG = MyReader.class.getSimpleName();
     public final static int STATUS_SPEAKING = 1;
     public final static int STATUS_NOT_SPEAKING = 0;
+    public final static int TYPE_INGREDIENTS = 1;
+    public final static int TYPE_INSTRUCTIONS = 0;
 
     public MyObservableBoolean mShouldReadIngredients = new MyObservableBoolean(true);
     public MyObservableBoolean mShouldReadPreparation = new MyObservableBoolean(true);
     private boolean mProcessed = false;
+    private boolean mIngredientsProcessed = false;
+    private boolean mInstructionProcessed = false;
     private IntToListen mMyReaderStatus; //STATUS_SPEAKING or STATUS_NOT_SPEAKING
+    private IntToListen mMyReaderType; //TYPE_INGREDIENTS or TYPE_INSTRUCTIONS
     private String mIngredientsText;
     private String mPreparationText;
 
     private Context mContext;
-    private final String FILENAME = "/wpta_tts.wav";
+    private final String FILENAME_ingredients = "/wpta_ingredients.wav";
+    private final String FILENAME_instructions = "/wpta_instructions.wav";
     private TextToSpeech mTextToSpeech;
     private MediaPlayer mMediaPlayer;
     private MediaPlayer.OnCompletionListener mediaPlayerCompletionListener = new MediaPlayer.OnCompletionListener() {
         @Override
         public void onCompletion(MediaPlayer mp) {
             Log.i(TAG, "media finnished");
-            mMyReaderStatus.setValue(STATUS_NOT_SPEAKING);
+            if (mMyReaderType.getValue() == TYPE_INGREDIENTS & mShouldReadPreparation.getValue()) {
+                mMyReaderType.setValue(TYPE_INSTRUCTIONS);
+                mMediaPlayer.reset();
+                initializeMediaPlayer();
+                playMedia();
+            } else {
+                mMyReaderStatus.setValue(STATUS_NOT_SPEAKING);
+                mMyReaderType.setValue(TYPE_INGREDIENTS);
+            }
         }
     };
 
@@ -41,6 +55,7 @@ public class MyReader {
         Log.i(TAG, "new MyReader");
         mContext = context;
         mMyReaderStatus = new IntToListen(STATUS_NOT_SPEAKING);
+        mMyReaderType = new IntToListen(TYPE_INGREDIENTS);
         mMediaPlayer = new MediaPlayer();
         initializeTextToSpeech();
         mMediaPlayer.setOnCompletionListener(mediaPlayerCompletionListener);
@@ -48,26 +63,41 @@ public class MyReader {
         mPreparationText = preparationText;
     }
 
-    public void read() {
+    public void prepareFiles(){
         if (!mProcessed) {
-            String toSpeak = "";
-            if (mShouldReadIngredients.getValue()) {
-                toSpeak = toSpeak.concat(mIngredientsText + "\n");
+            String toSpeakIngredients = "";
+            String toSpeakInstructions = "";
+            if (!mIngredientsProcessed) {
+                toSpeakIngredients = toSpeakIngredients.concat(mIngredientsText + "\n");
+                Log.i(TAG, "to speak ingredients: " + toSpeakIngredients);
+                File destinationFileIngredients = new File(
+                        mContext.getExternalCacheDir().getAbsolutePath(), FILENAME_ingredients);
+                Log.i(TAG, "file ingredients created");
+                String utteranceID = "wpta_ingredients";
+                Bundle params = new Bundle();
+                params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
+                Log.i(TAG, "params.putString ");
+                mTextToSpeech.synthesizeToFile(toSpeakIngredients, params, destinationFileIngredients, utteranceID);
+                Log.i(TAG, "mTextToSpeech ingredients");
             }
-            if (mShouldReadPreparation.getValue()) {
-                toSpeak = toSpeak.concat(mPreparationText + "\n");
+            if (!mInstructionProcessed) {
+                toSpeakInstructions = toSpeakInstructions.concat(mPreparationText + "\n");
+                Log.i(TAG, "to speak instructions: " + toSpeakInstructions);
+                File destinationFileInstructions = new File(
+                        mContext.getExternalCacheDir().getAbsolutePath(), FILENAME_instructions);
+                Log.i(TAG, "file instructions created");
+                String utteranceID = "wpta_instructions";
+                Bundle params = new Bundle();
+                params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
+                Log.i(TAG, "params.putString ");
+                mTextToSpeech.synthesizeToFile(toSpeakInstructions, params, destinationFileInstructions, utteranceID);
+                Log.i(TAG, "mTextToSpeech instructions");
             }
-            Log.i(TAG, "to speak: " + toSpeak);
+        }
+    }
 
-            File destinationFile = new File(mContext.getExternalCacheDir().getAbsolutePath(), FILENAME);
-            Log.i(TAG, "file created");
-            String utteranceID = "wpta";
-            Bundle params = new Bundle();
-            params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
-            Log.i(TAG, "params.putString ");
-            mTextToSpeech.synthesizeToFile(toSpeak, params, destinationFile, utteranceID);
-            Log.i(TAG, "mTextToSpeech");
-        } else {
+    public void read() {
+        if(mProcessed){
             playMedia();
         }
     }
@@ -77,8 +107,19 @@ public class MyReader {
     }
 
     private void initializeMediaPlayer() {
-        String fileName = mContext.getExternalCacheDir().getAbsolutePath() + FILENAME;
-        Log.d(TAG, "media sie zaczyna");
+        String fileToPlay = "";
+
+        if (mShouldReadIngredients.getValue() & mMyReaderType.getValue() == TYPE_INGREDIENTS) {
+            fileToPlay = FILENAME_ingredients;
+        } else if (mShouldReadPreparation.getValue()) {
+            fileToPlay = FILENAME_instructions;
+            mMyReaderType.setValue(TYPE_INSTRUCTIONS);
+        } else {
+            return;
+        }
+
+        String fileName = mContext.getExternalCacheDir().getAbsolutePath() + fileToPlay;
+        Log.d(TAG, "media sie zaczyna: " + fileName);
 
         Uri uri = Uri.parse("file://" + fileName);
 
@@ -101,23 +142,36 @@ public class MyReader {
                 if (status != TextToSpeech.ERROR) {
                     mTextToSpeech.setLanguage(new Locale("pl_PL"));
                 }
+                prepareFiles();
             }
         });
         mTextToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             @Override
             public void onDone(String utteranceId) {
 
-                Log.d(TAG, "juz zrobiłem plik");
+                //TO DO: mProcessed = true, tylko jeżeli oba pliki zostały juz zrobione
+                Log.d(TAG, "juz zrobiłem plik " + utteranceId);
                 // Speech file is created
-                mProcessed = true;
+                if (utteranceId.equals("wpta_ingredients")) {
+                    mIngredientsProcessed = true;
+                }
 
-                // Initializes Media Player
-                mMediaPlayer.reset(); // to set source in media, media must be in idle state (Android Developer)
-                initializeMediaPlayer();
-                Log.d(TAG, "wywołałem media");
+                if (utteranceId.equals("wpta_instructions")) {
+                    mInstructionProcessed = true;
+                }
 
-                // Start Playing Speech
-                playMedia();
+                if (mIngredientsProcessed & mInstructionProcessed) {
+                    mProcessed = true;
+                    // Initializes Media Player
+                    mMediaPlayer.reset(); // to set source in media, media must be in idle state (Android Developer)
+                    initializeMediaPlayer();
+                    Log.d(TAG, "wywołałem media");
+
+                    // Start Playing Speech
+                    playMedia();
+
+                }
+
             }
 
             @Override
@@ -128,7 +182,7 @@ public class MyReader {
             @Override
             public void onStart(String utteranceId) {
 
-                Log.d(TAG, "zacząłem robić");
+                Log.d(TAG, "zacząłem robić" + utteranceId);
             }
         });
     }
@@ -150,13 +204,15 @@ public class MyReader {
         }
         mMediaPlayer.reset();
         initializeMediaPlayer();
-        mProcessed = false;
     }
 
     public void readButtonsChanged(boolean readIngredients, boolean readPreparation) {
-        stopReading();
         mShouldReadIngredients.setValue(readIngredients);
         mShouldReadPreparation.setValue(readPreparation);
+        if (mShouldReadIngredients.getValue()) {
+            mMyReaderType.setValue(TYPE_INGREDIENTS);
+        }
+        stopReading();
         //read();
     }
 
