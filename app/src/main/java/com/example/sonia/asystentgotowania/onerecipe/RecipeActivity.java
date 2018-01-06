@@ -113,7 +113,8 @@ public class RecipeActivity extends AppCompatActivity {
     private void getRecipeFormLink(Intent intent) {
         String link = intent.getStringExtra(Intent.EXTRA_TEXT);
         if (link != null) {
-            JSONObject recipeJson = RecipeFromLink.getRecipeInJSONFromLink(link);
+            RecipeFromLink newRecipe = new RecipeFromLink(link);
+            JSONObject recipeJson = newRecipe.getRecipeInJSON();
             mIngredientsText = MyJSONhelper.getIngredientsFromJSON(recipeJson);
             mPreparationText = MyJSONhelper.getPreparationFromJSON(recipeJson);
         }
