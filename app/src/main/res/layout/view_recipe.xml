@@ -13,22 +13,21 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="100dp"
             android:orientation="vertical"
-            android:clickable="true"
-            android:focusableInTouchMode="true"
             >
 
             <Button
                 android:id="@+id/btnIngredients"
                 android:layout_width="match_parent"
                 android:layout_height="80dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginStart="8dp"
+                android:layout_marginEnd="20dp"
+                android:layout_marginStart="20dp"
                 android:layout_marginTop="8dp"
                 android:paddingEnd="10dp"
                 android:paddingStart="10dp"
                 android:text="Ingredients"
+                android:textSize="20dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -43,6 +42,10 @@
                 android:ems="10"
                 android:inputType="textMultiLine"
                 android:text="ingredients txt"
+                android:clickable="false"
+                android:cursorVisible="false"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/btnIngredients" />
@@ -51,12 +54,13 @@
                 android:id="@+id/btnPreparation"
                 android:layout_width="match_parent"
                 android:layout_height="80dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginStart="8dp"
+                android:layout_marginEnd="20dp"
+                android:layout_marginStart="20dp"
                 android:layout_marginTop="8dp"
                 android:paddingEnd="10dp"
                 android:paddingStart="10dp"
                 android:text="Recipe"
+                android:textSize="20dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/etIngredients" />
@@ -71,6 +75,10 @@
                 android:ems="10"
                 android:inputType="textMultiLine"
                 android:text="recipe text"
+                android:clickable="false"
+                android:cursorVisible="false"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/btnPreparation" />
@@ -79,18 +87,72 @@
 
     </ScrollView>
 
-    <Button
-        android:background= "@drawable/ic_play"
-        android:id="@+id/btnPlayPause"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_marginBottom="3dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:paddingEnd="10dp"
-        android:paddingStart="10dp"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#ffffff"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" >
+        </Space>
+
+        <Button
+            android:background= "@drawable/editing_pencil_f"
+            android:id="@+id/btnEdit"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginBottom="3dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:paddingEnd="10dp"
+            android:paddingStart="10dp" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" >
+        </Space>
+
+        <Button
+            android:background= "@drawable/ic_play_r"
+            android:id="@+id/btnPlayPause"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="3dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:paddingEnd="10dp"
+            android:paddingStart="10dp" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" >
+        </Space>
+
+        <Button
+            android:background= "@drawable/plus_f"
+            android:id="@+id/btnSave"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginBottom="3dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:paddingEnd="10dp"
+            android:paddingStart="10dp" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" >
+        </Space>
+
+    </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>

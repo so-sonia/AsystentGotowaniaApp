@@ -238,5 +238,20 @@ public class MyReader {
         mMediaPlayer.release();
     }
 
+    public void compareContent(String ingredients, String instructions) {
+        if (!ingredients.equals(mIngredientsText)){
+            mIngredientsText = ingredients;
+            mProcessed = false;
+            mIngredientsProcessed = false;
+        }
+        if (!instructions.equals(mPreparationText)) {
+            mProcessed = false;
+            mInstructionProcessed = false;
+            mPreparationText = instructions;
+        }
+        prepareFiles();
+
+    }
+
 
 }

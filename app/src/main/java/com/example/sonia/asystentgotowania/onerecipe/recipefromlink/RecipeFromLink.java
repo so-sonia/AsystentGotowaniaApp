@@ -57,16 +57,6 @@ public class RecipeFromLink {
     }
 
     public JSONObject getRecipeInJSON() {
-        //tak chwilowo, zeby dzialalo i pokazac o co mi chodzi:
-//        String nazwa = "CIASTECZKA SEROWE";
-//        String skladniki = "ser biały / twaróg – 125 g\n" +
-//                "mąka pszenna – 125 g\n" +
-//                "masło – 125 g\n" +
-//                "cukier";
-//        String przyrzadzenie = "Masło siekamy z mąką i serem białym, zagniatamy gładkie ciasto, odstawiamy na ok. 20 minut do lodówki.\n" +
-//                "Po tym czasie rozwałkowujemy na ok. 4 mm, wycinamy okręgi ( lubi kwadraty za pomocą radełka ) i wkładamy na blachę wyłożoną papierem do pieczenia.\n" +
-//                "Posypujemy cukrem i pieczemy ok. 20min/180C";
-
         JSONObject przepis = new JSONObject();
         try {
             przepis.put(Constants.JSON_RECIPE_TITLE, this.recipeName);

@@ -1,11 +1,17 @@
 package com.example.sonia.asystentgotowania.onerecipe;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -16,6 +22,7 @@ import com.example.sonia.asystentgotowania.onerecipe.recipefromlink.RecipeFromLi
 
 import org.json.JSONObject;
 
+import java.net.URL;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -24,6 +31,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.OnLongClick;
+
+import static android.R.attr.action;
 
 public class RecipeActivity extends AppCompatActivity {
     private static final String TAG = RecipeActivity.class.getSimpleName();
@@ -38,13 +47,22 @@ public class RecipeActivity extends AppCompatActivity {
     EditText metRecipe;
     @BindView(R.id.btnPlayPause)
     Button mbtnPlayPause;
+    @BindView(R.id.btnEdit)
+    Button mbtnEdit;
+    @BindView(R.id.btnSave)
+    Button mbtnSave;
 
-    @BindDrawable(R.drawable.ic_pause)
+
+    @BindDrawable(R.drawable.ic_pause_r)
     Drawable mpauseIcon;
-    @BindDrawable(R.drawable.ic_play)
+    @BindDrawable(R.drawable.ic_play_r)
     Drawable mplayIcon;
+    @BindDrawable(R.drawable.editing_pencil_f)
+    Drawable editingIcon;
+    @BindDrawable(R.drawable.check_mark_f)
+    Drawable checkmarkIcon;
 
-
+    boolean editable;
     String mIngredientsText;
     String mPreparationText;
     MyReader mmyReader;
@@ -89,57 +107,66 @@ public class RecipeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.view_recipe);
         ButterKnife.bind(this);
+        editable = false;
 
-        final Intent intent = getIntent();
-        String action = intent.getAction();
-        String type = intent.getType();
+        new putRecipeInView().execute();
+    }
 
-        //recipe from internet
-        if (Intent.ACTION_SEND.equals(action) && type != null && "text/plain".equals(type)) {
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try  {
-                        getRecipeFormLink(intent); // Handle text being sent
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                     }
-                }
-            });
-            thread.start();
-        } else {
-            mIngredientsText = "mąka\n sól\n woda\n wino\n";
-//            mPreparationText = "zmieszaj mąkę i wodę. \nNalej sobie kieliszek wina. \n";
-            mPreparationText = "Dynię obrać ze skórki, usunąć nasiona, miąższ pokroić w kostkę. Ziemniaki obrać i też pokroić w kostkę. \n" +
-                    "W większym garnku na maśle zeszklić pokrojoną w kosteczkę cebulę oraz obrany i pokrojony na plasterki czosnek. Dodać dynię i ziemniaki, doprawić solą, wsypać kurkumę i dodać imbir. Smażyć co chwilę mieszając przez ok. 5 minut.\n" +
-                    "Wlać gorący bulion, przykryć i zagotować. Zmniejszyć ogień do średniego i gotować przez ok. 10 minut. \n" +
-                    "Świeżego pomidora sparzyć, obrać, pokroić na ćwiartki, usunąć szypułki oraz nasiona z komór. Miąższ pokroić w kosteczkę i dodać do zupy. Pomidory z puszki są już gotowe do użycia, wystarczy dodać do potrawy.\n" +
-                    "Wymieszać i gotować przez 5 minut, do miękkości warzyw. Zmiksować w blenderze z dodatkiem mleka.\n";
+    private class putRecipeInView extends AsyncTask<Void, Void, Void> {
+
+        String ingredients;
+        String instructions;
+
+        private void getRecipeFormLink(Intent intent) {
+            String link = intent.getStringExtra(Intent.EXTRA_TEXT);
+            Log.d(TAG, link);
+//            link = link.replace("https", "http");
+//            Log.d(TAG, link);
+            if (link != null) {
+                RecipeFromLink newRecipe = new RecipeFromLink(link);
+                JSONObject recipeJson = newRecipe.getRecipeInJSON();
+                ingredients = MyJSONhelper.getIngredientsFromJSON(recipeJson);
+                instructions = MyJSONhelper.getPreparationFromJSON(recipeJson);
+            }
         }
-        setRecipeTextsInViews();
 
-        mmyReader = new MyReader(getApplicationContext(), "składniki:\n" + mIngredientsText,
-                "przygotowanie:\n" + mPreparationText);
-        mmyReader.getStatusObservable().addObserver(mStatusObserver);
-        mmyReader.mShouldReadPreparation.addObserver(mButtonsObserver);
-        mmyReader.mShouldReadIngredients.addObserver(mButtonsObserver);
-        setButtonsColors();
-    }
+        private void setRecipeTextsInViews() {
+            metIngredients.setText(mIngredientsText);
+            metRecipe.setText(mPreparationText);
+        }
 
-    private void getRecipeFormLink(Intent intent) {
-        String link = intent.getStringExtra(Intent.EXTRA_TEXT);
-        if (link != null) {
-            RecipeFromLink newRecipe = new RecipeFromLink(link);
-            JSONObject recipeJson = newRecipe.getRecipeInJSON();
-            mIngredientsText = MyJSONhelper.getIngredientsFromJSON(recipeJson);
-            mPreparationText = MyJSONhelper.getPreparationFromJSON(recipeJson);
+        @Override
+        protected Void doInBackground(Void... params) {
+            Intent intent = getIntent();
+            String action = intent.getAction();
+            String type = intent.getType();
+            if (Intent.ACTION_SEND.equals(action) && type != null && "text/plain".equals(type)) {
+                getRecipeFormLink(intent);
+            } else {
+                ingredients = "mąka\n sól\n woda\n wino\n";
+                instructions = "Dynię obrać ze skórki, usunąć nasiona, miąższ pokroić w kostkę. Ziemniaki obrać i też pokroić w kostkę. \n" +
+                        "W większym garnku na maśle zeszklić pokrojoną w kosteczkę cebulę oraz obrany i pokrojony na plasterki czosnek. Dodać dynię i ziemniaki, doprawić solą, wsypać kurkumę i dodać imbir. Smażyć co chwilę mieszając przez ok. 5 minut.\n" +
+                        "Wlać gorący bulion, przykryć i zagotować. Zmniejszyć ogień do średniego i gotować przez ok. 10 minut. \n" +
+                        "Świeżego pomidora sparzyć, obrać, pokroić na ćwiartki, usunąć szypułki oraz nasiona z komór. Miąższ pokroić w kosteczkę i dodać do zupy. Pomidory z puszki są już gotowe do użycia, wystarczy dodać do potrawy.\n" +
+                        "Wymieszać i gotować przez 5 minut, do miękkości warzyw. Zmiksować w blenderze z dodatkiem mleka.\n";
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            mIngredientsText = ingredients;
+            mPreparationText = instructions;
+            setRecipeTextsInViews();
+            mmyReader = new MyReader(getApplicationContext(), "składniki:\n" + mIngredientsText,
+                    "przygotowanie:\n" + mPreparationText);
+            mmyReader.getStatusObservable().addObserver(mStatusObserver);
+            mmyReader.mShouldReadPreparation.addObserver(mButtonsObserver);
+            mmyReader.mShouldReadIngredients.addObserver(mButtonsObserver);
+            setButtonsColors();
         }
     }
 
-    private void setRecipeTextsInViews() {
-        metIngredients.setText(mIngredientsText);
-        metRecipe.setText(mPreparationText);
-    }
 
     @Override
     protected void onDestroy() {
@@ -156,7 +183,45 @@ public class RecipeActivity extends AppCompatActivity {
         }
     }
 
-//    @OnLongClick(R.id.etIngredients)
+    @OnClick(R.id.btnEdit)
+    public void editRecipe(){
+        if (editable) {
+            if (getCurrentFocus() != null) {
+                InputMethodManager inputManager = (InputMethodManager)
+                        getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),
+                        InputMethodManager.HIDE_NOT_ALWAYS);
+            }
+            metIngredients.setFocusable(false);
+            metIngredients.setClickable(false);
+            metIngredients.setFocusableInTouchMode(false);
+            metIngredients.setCursorVisible(false);
+            metRecipe.setFocusable(false);
+            metRecipe.setClickable(false);
+            metRecipe.setFocusableInTouchMode(false);
+            metRecipe.setCursorVisible(false);
+            mbtnEdit.setBackground(editingIcon);
+            editable = false;
+
+            String ingredients = metIngredients.getText().toString();
+            String preparation = metRecipe.getText().toString();
+            mmyReader.compareContent("składniki:\n" + ingredients,
+                    "przygotowanie:\n" + preparation);
+        } else {
+            metIngredients.setFocusable(true);
+            metIngredients.setClickable(true);
+            metIngredients.setFocusableInTouchMode(true);
+            metIngredients.setCursorVisible(true);
+            metRecipe.setFocusable(true);
+            metRecipe.setClickable(true);
+            metRecipe.setFocusableInTouchMode(true);
+            metRecipe.setCursorVisible(true);
+            mbtnEdit.setBackground(checkmarkIcon);
+            editable = true;
+        }
+    }
+
+
 
 
     @OnClick(R.id.btnIngredients)
@@ -171,12 +236,16 @@ public class RecipeActivity extends AppCompatActivity {
 
     public void setButtonsColors() {
         if (mmyReader.mShouldReadIngredients.getValue()) {
-            mbtnIngredients.setBackgroundColor(Color.GREEN);
+            int myColor = ContextCompat.getColor(getApplicationContext(), R.color.colorAccent);
+            mbtnIngredients.setBackgroundColor(myColor);
+//            mbtnIngredients.setBackgroundColor(Color.GREEN);
         } else {
             mbtnIngredients.setBackgroundColor(Color.GRAY);
         }
         if (mmyReader.mShouldReadPreparation.getValue()) {
-            mbtnPreparation.setBackgroundColor(Color.GREEN);
+//            mbtnPreparation.setBackgroundColor(Color.GREEN);
+            int myColor = ContextCompat.getColor(getApplicationContext(), R.color.colorAccent);
+            mbtnPreparation.setBackgroundColor(myColor);
         } else {
             mbtnPreparation.setBackgroundColor(Color.GRAY);
         }
