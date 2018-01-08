@@ -8,4 +8,21 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="shelfLayout">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:padding">10dp</item>
+    </style>
+
+    <style name="shelfItem">
+        <item name="android:layout_margin">10dp</item>
+        <item name="android:padding">10dp</item>
+        <item name="android:background">@null</item>
+        <item name="android:layout_columnWeight">0.1</item>
+        <item name="android:scaleType">centerCrop</item>
+
+
+    </style>
+
+
 </resources>

@@ -25,6 +25,7 @@ public class RecipeFromLink {
     private String instructions;
     private String ingredients;
     private String recipeName;
+    private String pictureURL;
     private final String TAG = RecipeFromLink.class.getSimpleName();
 
     public RecipeFromLink(String link){
@@ -62,6 +63,7 @@ public class RecipeFromLink {
             przepis.put(Constants.JSON_RECIPE_TITLE, this.recipeName);
             przepis.put(Constants.JSON_RECIPE_INGREDIENTS, this.ingredients);
             przepis.put(Constants.JSON_RECIPE_PREPARATION, this.instructions);
+            przepis.put(Constants.JSON_RECIPE_PICTUREURL, this.pictureURL);
         } catch (JSONException e) {
             Log.e(TAG, "JSON error:", e);
         }
@@ -81,6 +83,7 @@ public class RecipeFromLink {
         this.recipeName = title;
         String ingredients;
         String instructions;
+        String pictureURL;
 
         if (this.knownWebsite) {
 
@@ -90,38 +93,46 @@ public class RecipeFromLink {
 
             if (webData.hasRecipeClass()) {
                 ingredients = getOnlyIngredients(ingreCleaned);
-
                 Elements reci = doc.select(webData.getRecipeClass());
                 instructions = getOnlyInstructions(cleanParser(reci));
+                pictureURL = getPictureURL(doc, null);
 
             } else {
                 ingredients = getIngredients(ingreCleaned);
                 instructions = getInstructions(ingreCleaned);
+                pictureURL = getPictureURL(doc, ingre);
             }
 
 
         } else {
             String content;
-
             Elements ingre = doc.select("[class~=print]");
 
             if ("".equals(ingre.text()) | ingre.text().length()< 100) {
                 ingre = doc.select("[class~=post-?[0-9]+], [id~=post-?[0-9]+]");
 
                 if ("".equals(ingre.text())) {
+                    ingre = doc.select("[class~=post], [id~=post]");
 
-                    Element body = doc.body();
-                    content = cleanParser(body);
+                    if ("".equals(ingre.text())) {
+
+                        Element body = doc.body();
+                        content = cleanParser(body);
+                        pictureURL = getPictureURL(doc, null);
+
+                    } else {
+                        content = cleanParser(ingre);
+                        pictureURL = getPictureURL(doc, ingre);
+                    }
 
                 } else {
                     content = cleanParser(ingre);
-
+                    pictureURL = getPictureURL(doc, ingre);
                 }
 
             } else {
                 content = cleanParser(ingre);
-                System.out.println(content);
-
+                pictureURL = getPictureURL(doc, ingre);
             }
 
             ingredients = getIngredients(content);
@@ -130,6 +141,7 @@ public class RecipeFromLink {
 
         this.ingredients = ingredients;
         this.instructions = instructions;
+        this.pictureURL = pictureURL;
     }
 
     public String getRecipeTitle(Document doc) {
@@ -142,6 +154,28 @@ public class RecipeFromLink {
         return(titleClean);
     }
 
+    public String getPictureURL(Document doc, Elements el) {
+        String picutreURL="";
+        Element picture = null;
+        System.out.println("punkt nr 0");
+        if (el!=null) {
+            System.out.println("punkt nr 1");
+            picture = el.select("img[src~=.*\\.(jpe?g|JPE?G)]").first();
+        }
+        if (picture== null) {
+            System.out.println("punkt nr 2");
+            picture = doc.body().select("img[src~=.*\\.(jpe?g|JPE?G)]").first();
+        }
+        if (picture == null) {
+            System.out.println("punkt nr 3");
+            picture = doc.select("img[src~=.*\\.(jpe?g|JPE?G)]").first();
+        }
+        if (picture != null) {
+            picutreURL = picture.attr("src");
+        }
+        return(picutreURL);
+    }
+
     /**cleanParser gets rid of the HTML tags preserving the new line characters. It also cleans extra new line characters to
      get pretty output (first making sure all multiple spaces are change to one space, so they are not considered
      as more than one whitespace character)*/
@@ -151,7 +185,7 @@ public class RecipeFromLink {
         dirty.select("p").prepend("\\n\\n");
         String cleaned = dirty.html().replaceAll("\\\\n", "\n");
         cleaned = Jsoup.clean(cleaned, "", Whitelist.none(), new Document.OutputSettings().prettyPrint(false));
-        cleaned = cleaned.replaceAll(" {2,}", " ").replaceAll("(\\s){2,}", "\n").replaceAll("&nbsp;", " ");
+        cleaned = cleaned.replaceAll(" {2,}", " ").replaceAll("(\\s){3,}", "\n").replaceAll("&nbsp;", " ");
         return cleaned;
     }
 
@@ -160,7 +194,7 @@ public class RecipeFromLink {
         dirty.select("p").prepend("\\n\\n");
         String cleaned = dirty.html().replaceAll("\\\\n", "\n");
         cleaned = Jsoup.clean(cleaned, "", Whitelist.none(), new Document.OutputSettings().prettyPrint(false));
-        cleaned = cleaned.replaceAll(" {2,}", " ").replaceAll("(\\s){2,}", "\n").replaceAll("&nbsp;", " ");
+        cleaned = cleaned.replaceAll(" {2,}", " ").replaceAll("(\\s){3,}", "\n").replaceAll("&nbsp;", " ");
         return cleaned;
     }
 

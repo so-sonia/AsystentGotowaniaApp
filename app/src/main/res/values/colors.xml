@@ -3,4 +3,5 @@
     <color name="colorPrimary">#631bbc</color>
     <color name="colorPrimaryDark">#42008a</color>
     <color name="colorAccent">#EC407A</color>
+    <color name="shelfBackground">#EEEEEE</color>
 </resources>

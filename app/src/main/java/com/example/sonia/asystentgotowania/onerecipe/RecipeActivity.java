@@ -3,10 +3,12 @@ package com.example.sonia.asystentgotowania.onerecipe;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -16,12 +18,20 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.example.sonia.asystentgotowania.R;
+import com.example.sonia.asystentgotowania.allrecipeview.AllRecipesActivity;
+import com.example.sonia.asystentgotowania.databaseforrecipes.DataBaseSingleton;
+import com.example.sonia.asystentgotowania.databaseforrecipes.RecipeEntity;
 import com.example.sonia.asystentgotowania.onerecipe.reading.MyJSONhelper;
 import com.example.sonia.asystentgotowania.onerecipe.reading.MyReader;
 import com.example.sonia.asystentgotowania.onerecipe.recipefromlink.RecipeFromLink;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Observable;
 import java.util.Observer;
@@ -62,9 +72,13 @@ public class RecipeActivity extends AppCompatActivity {
     @BindDrawable(R.drawable.check_mark_f)
     Drawable checkmarkIcon;
 
+
     boolean editable;
     String mIngredientsText;
     String mPreparationText;
+    String mTitle;
+    String mPictureURL;
+
     MyReader mmyReader;
     Observer mStatusObserver = new Observer() {
         @Override
@@ -120,13 +134,13 @@ public class RecipeActivity extends AppCompatActivity {
         private void getRecipeFormLink(Intent intent) {
             String link = intent.getStringExtra(Intent.EXTRA_TEXT);
             Log.d(TAG, link);
-//            link = link.replace("https", "http");
-//            Log.d(TAG, link);
             if (link != null) {
                 RecipeFromLink newRecipe = new RecipeFromLink(link);
                 JSONObject recipeJson = newRecipe.getRecipeInJSON();
                 ingredients = MyJSONhelper.getIngredientsFromJSON(recipeJson);
                 instructions = MyJSONhelper.getPreparationFromJSON(recipeJson);
+                mTitle = MyJSONhelper.getTitleFromJSON(recipeJson);
+                mPictureURL = MyJSONhelper.getPictureURLFromJSON(recipeJson);
             }
         }
 
@@ -250,4 +264,75 @@ public class RecipeActivity extends AppCompatActivity {
             mbtnPreparation.setBackgroundColor(Color.GRAY);
         }
     }
+
+    @OnClick(R.id.btnSave)
+    public void saveRecipe(){
+//        if ("".equals(mTitle)){
+        mTitle = "tytul_zastepczy";
+//        }
+        Log.d(TAG, "zapisuję z tytułem " + mTitle);
+        if (!"".equals(mPictureURL)){
+            Log.d(TAG, "adres zdjęcia " + mPictureURL);
+            Picasso.with(getApplicationContext()).load(mPictureURL)
+                    .noFade().resize(200, 200).centerCrop()
+                    .into(getTarget(mTitle));
+        }
+        new RecipeSaver().execute(mTitle, mIngredientsText, mPreparationText);
+        Intent i = new Intent(getApplicationContext(), AllRecipesActivity.class);
+        startActivity(i);
+    }
+
+    private static Target getTarget(final String title){
+        Target target = new Target(){
+
+            @Override
+            public void onBitmapLoaded(final Bitmap bitmap, Picasso.LoadedFrom from) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        File file = new File( Environment.getExternalStorageDirectory().getPath(), title);
+                        Log.d("FILE DOWNLOAD", "stworzyłem file" + file.getName());
+//                        new File(
+//                                mContext.getExternalCacheDir().getAbsolutePath(), FILENAME_ingredients);
+                        try {
+                            file.createNewFile();
+                            FileOutputStream ostream = new FileOutputStream(file);
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
+                            ostream.flush();
+                            ostream.close();
+                        } catch (IOException e) {
+                            Log.e("IOException", e.getLocalizedMessage());
+                        }
+                    }
+                }).start();
+
+            }
+
+            @Override
+            public void onBitmapFailed(Drawable errorDrawable) {
+
+            }
+
+            @Override
+            public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+            }
+        };
+        return target;
+    }
+
+    private class RecipeSaver extends AsyncTask<String, Void, Void> {
+        @Override
+        protected Void doInBackground(String... params) {
+            String recipeTitle = params[0];
+            String ingredients = params[1];
+            String preparation = params[2];
+            RecipeEntity recipe = new RecipeEntity(recipeTitle, ingredients, preparation);
+            DataBaseSingleton.getInstance(getApplicationContext()).saveRecipe(recipe);
+            return null;
+        }
+
+    }
+
 }
