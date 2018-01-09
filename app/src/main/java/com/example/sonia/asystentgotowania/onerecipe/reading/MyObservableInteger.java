@@ -2,10 +2,10 @@ package com.example.sonia.asystentgotowania.onerecipe.reading;
 
 import java.util.Observable;
 
-public class IntToListen extends Observable {
+public class MyObservableInteger extends Observable {
     private int value;
 
-    IntToListen(int value) {
+    MyObservableInteger(int value) {
         this.value = value;
     }
 

@@ -19,16 +19,17 @@ public class MyReader {
     private static final String TAG = Constants.APP_TAG.concat(MyReader.class.getSimpleName());
     public final static int STATUS_SPEAKING = 1;
     public final static int STATUS_NOT_SPEAKING = 0;
-    public final static int TYPE_INGREDIENTS = 1;
-    public final static int TYPE_INSTRUCTIONS = 0;
+
+    private final static int TYPE_INGREDIENTS = 1;
+    private final static int TYPE_NOT_INGREDIENTS = 0;
 
     public MyObservableBoolean mShouldReadIngredients = new MyObservableBoolean(true);
     public MyObservableBoolean mShouldReadPreparation = new MyObservableBoolean(true);
     private boolean mProcessed = false;
     private boolean mIngredientsProcessed = false;
     private boolean mInstructionProcessed = false;
-    private IntToListen mMyReaderStatus; //STATUS_SPEAKING or STATUS_NOT_SPEAKING
-    private IntToListen mMyReaderType; //TYPE_INGREDIENTS or TYPE_INSTRUCTIONS
+    private MyObservableInteger mMyReaderStatus; //STATUS_SPEAKING or STATUS_NOT_SPEAKING
+    private MyObservableInteger mMyReaderType; //TYPE_INGREDIENTS or TYPE_NOT_INGREDIENTS
     private String mIngredientsText;
     private String mPreparationText;
 
@@ -41,14 +42,13 @@ public class MyReader {
         @Override
         public void onCompletion(MediaPlayer mp) {
             Log.i(TAG, "media finnished");
-            if (mMyReaderType.getValue() == TYPE_INGREDIENTS & mShouldReadPreparation.getValue()) {
-                mMyReaderType.setValue(TYPE_INSTRUCTIONS);
-                mMediaPlayer.reset();
+            if (mMyReaderType.getValue() == TYPE_INGREDIENTS && mShouldReadPreparation.getValue()) {
+                mMyReaderType.setValue(TYPE_NOT_INGREDIENTS);
                 initializeMediaPlayer();
                 playMedia();
             } else {
+                mMyReaderType.setValue(TYPE_NOT_INGREDIENTS);
                 mMyReaderStatus.setValue(STATUS_NOT_SPEAKING);
-                mMyReaderType.setValue(TYPE_INGREDIENTS);
             }
         }
     };
@@ -56,8 +56,8 @@ public class MyReader {
     public MyReader(Context context, String ingredientsText, String preparationText) {
         Log.i(TAG, "new MyReader");
         mContext = context;
-        mMyReaderStatus = new IntToListen(STATUS_NOT_SPEAKING);
-        mMyReaderType = new IntToListen(TYPE_INGREDIENTS);
+        mMyReaderStatus = new MyObservableInteger(STATUS_NOT_SPEAKING);
+        mMyReaderType = new MyObservableInteger(TYPE_INGREDIENTS);
         mMediaPlayer = new MediaPlayer();
         initializeTextToSpeech();
         mMediaPlayer.setOnCompletionListener(mediaPlayerCompletionListener);
@@ -109,14 +109,15 @@ public class MyReader {
     }
 
     private void initializeMediaPlayer() {
-        String fileToPlay = "";
+        mMediaPlayer.reset();
+        String fileToPlay;
 
-        if (mShouldReadIngredients.getValue() & mMyReaderType.getValue() == TYPE_INGREDIENTS) {
+        if (mShouldReadIngredients.getValue() && mMyReaderType.getValue() == TYPE_INGREDIENTS) {
             fileToPlay = FILENAME_ingredients;
         } else if (mShouldReadPreparation.getValue()) {
             fileToPlay = FILENAME_instructions;
-            mMyReaderType.setValue(TYPE_INSTRUCTIONS);
         } else {
+            mMyReaderStatus.setValue(STATUS_NOT_SPEAKING);
             return;
         }
 
@@ -199,32 +200,23 @@ public class MyReader {
         mMediaPlayer.pause();
     }
 
-    private void stopReading() {
-        Log.i(TAG, "stop reading");
-        if (mMediaPlayer.isPlaying()) {
-            pauseMedia();
-        }
-        mMediaPlayer.reset();
-        initializeMediaPlayer();
-    }
-
     public void readButtonsChanged(boolean readIngredients, boolean readPreparation) {
-        stopReading();
+        pauseMedia();
         mShouldReadIngredients.setValue(readIngredients);
         mShouldReadPreparation.setValue(readPreparation);
         if (mShouldReadIngredients.getValue()) {
             mMyReaderType.setValue(TYPE_INGREDIENTS);
         }
+        initializeMediaPlayer();
         Log.i(TAG, "readButtonsChanged: ing: " + mShouldReadIngredients.getValue()
                 + " prep: " + mShouldReadPreparation.getValue());
-        //read();
     }
 
     public int getmMyReaderStatus() {
         return mMyReaderStatus.getValue();
     }
 
-    public IntToListen getStatusObservable() {
+    public MyObservableInteger getStatusObservable() {
         return mMyReaderStatus;
     }
 
