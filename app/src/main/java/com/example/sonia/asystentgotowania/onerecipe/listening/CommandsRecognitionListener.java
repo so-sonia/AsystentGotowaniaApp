@@ -4,6 +4,8 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.example.sonia.asystentgotowania.Constants;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -16,9 +18,15 @@ import edu.cmu.pocketsphinx.SpeechRecognizerSetup;
 
 
 public class CommandsRecognitionListener implements RecognitionListener {
-    private static final String TAG = CommandsRecognitionListener.class.getSimpleName();
-    private static final String JARVIS_ATTENTION = "jarvis";
-    public Context mContext;
+    private static final String TAG = Constants.APP_TAG.concat(CommandsRecognitionListener.class.getSimpleName());
+    private static final String SEARCH_KEYWORDS = "jarvis";
+    private Context mContext;
+
+    private Runnable mRunnableGo = null;
+    private Runnable mRunnableStop = null;
+    private Runnable mRunnableIngredients = null;
+    private Runnable mRunnablePreparation = null;
+    private Runnable mRunnableAll = null;
 
 
     public CommandsRecognitionListener(Context context) {
@@ -52,7 +60,7 @@ public class CommandsRecognitionListener implements RecognitionListener {
             if (result != null) {
                 Log.i(TAG, "onPostExecute");
             } else {
-                commandsRecognitionListener.get().switchSearch(JARVIS_ATTENTION);
+                commandsRecognitionListener.get().switchSearch(SEARCH_KEYWORDS);
             }
         }
     }
@@ -73,7 +81,7 @@ public class CommandsRecognitionListener implements RecognitionListener {
 
 
         File menuGrammar = new File(assetsDir, "commands.gram");
-        recognizer.addKeywordSearch(JARVIS_ATTENTION, menuGrammar);
+        recognizer.addKeywordSearch(SEARCH_KEYWORDS, menuGrammar);
     }
 
     SpeechRecognizer recognizer;
@@ -92,7 +100,7 @@ public class CommandsRecognitionListener implements RecognitionListener {
 
     @Override
     public void onEndOfSpeech() {
-        switchSearch(JARVIS_ATTENTION);
+        switchSearch(SEARCH_KEYWORDS);
 
     }
 
@@ -103,6 +111,9 @@ public class CommandsRecognitionListener implements RecognitionListener {
             return;
         }
         String text = hypothesis.getHypstr();
+        if (text.contains("stop")) {
+            reactOn(mRunnableStop);
+        }
         Log.i(TAG, "onPartialResult: " + text);
     }
 
@@ -110,7 +121,18 @@ public class CommandsRecognitionListener implements RecognitionListener {
     public void onResult(Hypothesis hypothesis) {
         Log.i(TAG, "onResult");
         if (hypothesis != null) {
-            //TODO ract on command
+            String text = hypothesis.getHypstr();
+            if (text.contains("stop")) {
+                reactOn(mRunnableStop);
+            } else if (text.contains("go")) {
+                reactOn(mRunnableGo);
+            } else if (text.contains("ingredients")) {
+                reactOn(mRunnableIngredients);
+            } else if (text.contains("preparation")) {
+                reactOn(mRunnablePreparation);
+            } else if (text.contains("read all")) {
+                reactOn(mRunnableAll);
+            }
             Log.i(TAG, "Result: " + hypothesis.getHypstr());
         }
     }
@@ -122,6 +144,25 @@ public class CommandsRecognitionListener implements RecognitionListener {
 
     @Override
     public void onTimeout() {
-        switchSearch(JARVIS_ATTENTION);
+        switchSearch(SEARCH_KEYWORDS);
+    }
+
+    private void reactOn(Runnable runnable) {
+        Log.i(TAG, "reactOn: " + runnable.toString());
+        if (runnable != null) {
+            runnable.run();
+        } else {
+            Log.i(TAG, "runnable null");
+        }
+    }
+
+    public void setOnGoThread(Runnable runnableGo, Runnable runnableStop,
+                              Runnable runnableIngredients, Runnable runnablePreparation,
+                              Runnable runnableAll) {
+        mRunnableGo = runnableGo;
+        mRunnableStop = runnableStop;
+        mRunnableIngredients = runnableIngredients;
+        mRunnablePreparation = runnablePreparation;
+        mRunnableAll = runnableAll;
     }
 }

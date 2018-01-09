@@ -1,5 +1,5 @@
-stop /1.0/
-ingredients /1.0/
-preparation /1.0/
-play /1.0/
+stop /1e-1/
+ingredients /1e-1/
+preparation /1e-10/
+read all /1e-1/
 go /1.0/

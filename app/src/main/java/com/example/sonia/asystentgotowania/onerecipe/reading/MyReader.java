@@ -9,12 +9,14 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 
+import com.example.sonia.asystentgotowania.Constants;
+
 import java.io.File;
 import java.util.Locale;
 
 
 public class MyReader {
-    private static final String TAG = MyReader.class.getSimpleName();
+    private static final String TAG = Constants.APP_TAG.concat(MyReader.class.getSimpleName());
     public final static int STATUS_SPEAKING = 1;
     public final static int STATUS_NOT_SPEAKING = 0;
     public final static int TYPE_INGREDIENTS = 1;
@@ -63,7 +65,7 @@ public class MyReader {
         mPreparationText = preparationText;
     }
 
-    public void prepareFiles(){
+    public void prepareFiles() {
         if (!mProcessed) {
             String toSpeakIngredients = "";
             String toSpeakInstructions = "";
@@ -97,7 +99,7 @@ public class MyReader {
     }
 
     public void read() {
-        if(mProcessed){
+        if (mProcessed) {
             playMedia();
         }
     }
@@ -207,12 +209,14 @@ public class MyReader {
     }
 
     public void readButtonsChanged(boolean readIngredients, boolean readPreparation) {
+        stopReading();
         mShouldReadIngredients.setValue(readIngredients);
         mShouldReadPreparation.setValue(readPreparation);
         if (mShouldReadIngredients.getValue()) {
             mMyReaderType.setValue(TYPE_INGREDIENTS);
         }
-        stopReading();
+        Log.i(TAG, "readButtonsChanged: ing: " + mShouldReadIngredients.getValue()
+                + " prep: " + mShouldReadPreparation.getValue());
         //read();
     }
 
@@ -239,7 +243,7 @@ public class MyReader {
     }
 
     public void compareContent(String ingredients, String instructions) {
-        if (!ingredients.equals(mIngredientsText)){
+        if (!ingredients.equals(mIngredientsText)) {
             mIngredientsText = ingredients;
             mProcessed = false;
             mIngredientsProcessed = false;

@@ -1,6 +1,5 @@
 package com.example.sonia.asystentgotowania.onerecipe;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -12,15 +11,16 @@ import android.os.Environment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.example.sonia.asystentgotowania.Constants;
 import com.example.sonia.asystentgotowania.R;
 import com.example.sonia.asystentgotowania.allrecipeview.AllRecipesActivity;
 import com.example.sonia.asystentgotowania.databaseforrecipes.DataBaseSingleton;
 import com.example.sonia.asystentgotowania.databaseforrecipes.RecipeEntity;
+import com.example.sonia.asystentgotowania.onerecipe.listening.CommandsRecognitionListener;
 import com.example.sonia.asystentgotowania.onerecipe.reading.MyJSONhelper;
 import com.example.sonia.asystentgotowania.onerecipe.reading.MyReader;
 import com.example.sonia.asystentgotowania.onerecipe.recipefromlink.RecipeFromLink;
@@ -32,7 +32,6 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -40,12 +39,9 @@ import butterknife.BindDrawable;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import butterknife.OnLongClick;
-
-import static android.R.attr.action;
 
 public class RecipeActivity extends AppCompatActivity {
-    private static final String TAG = RecipeActivity.class.getSimpleName();
+    private static final String TAG = Constants.APP_TAG.concat(RecipeActivity.class.getSimpleName());
 
     @BindView(R.id.btnIngredients)
     Button mbtnIngredients;
@@ -79,6 +75,7 @@ public class RecipeActivity extends AppCompatActivity {
     String mTitle;
     String mPictureURL;
 
+    CommandsRecognitionListener mCommandsRecognitionListener;
     MyReader mmyReader;
     Observer mStatusObserver = new Observer() {
         @Override
@@ -124,6 +121,7 @@ public class RecipeActivity extends AppCompatActivity {
         editable = false;
 
         new putRecipeInView().execute();
+        mCommandsRecognitionListener = new CommandsRecognitionListener(getApplicationContext());
     }
 
     private class putRecipeInView extends AsyncTask<Void, Void, Void> {
@@ -178,18 +176,25 @@ public class RecipeActivity extends AppCompatActivity {
             mmyReader.mShouldReadPreparation.addObserver(mButtonsObserver);
             mmyReader.mShouldReadIngredients.addObserver(mButtonsObserver);
             setButtonsColors();
+
+            mCommandsRecognitionListener.setOnGoThread(mRunnableGo, mRunnableStop,
+                    mRunnableIng, mRunnablePrep, mRunnableAll);
         }
     }
 
 
     @Override
     protected void onDestroy() {
-        mmyReader.killReader();
         super.onDestroy();
+        mmyReader.killReader();
+        if (mCommandsRecognitionListener != null) {
+            mCommandsRecognitionListener.destroy();
+        }
     }
 
     @OnClick(R.id.btnPlayPause)
     public void readText() {
+        Log.i(TAG, "readText");
         if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_NOT_SPEAKING) {
             mmyReader.read();
         } else if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_SPEAKING) {
@@ -198,7 +203,7 @@ public class RecipeActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.btnEdit)
-    public void editRecipe(){
+    public void editRecipe() {
         if (editable) {
             if (getCurrentFocus() != null) {
                 InputMethodManager inputManager = (InputMethodManager)
@@ -236,8 +241,6 @@ public class RecipeActivity extends AppCompatActivity {
     }
 
 
-
-
     @OnClick(R.id.btnIngredients)
     public void readIngredientsButtonClicked() {
         mmyReader.readButtonsChanged(!mmyReader.mShouldReadIngredients.getValue(), mmyReader.mShouldReadPreparation.getValue());
@@ -252,12 +255,10 @@ public class RecipeActivity extends AppCompatActivity {
         if (mmyReader.mShouldReadIngredients.getValue()) {
             int myColor = ContextCompat.getColor(getApplicationContext(), R.color.colorAccent);
             mbtnIngredients.setBackgroundColor(myColor);
-//            mbtnIngredients.setBackgroundColor(Color.GREEN);
         } else {
             mbtnIngredients.setBackgroundColor(Color.GRAY);
         }
         if (mmyReader.mShouldReadPreparation.getValue()) {
-//            mbtnPreparation.setBackgroundColor(Color.GREEN);
             int myColor = ContextCompat.getColor(getApplicationContext(), R.color.colorAccent);
             mbtnPreparation.setBackgroundColor(myColor);
         } else {
@@ -266,12 +267,12 @@ public class RecipeActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.btnSave)
-    public void saveRecipe(){
+    public void saveRecipe() {
 //        if ("".equals(mTitle)){
         mTitle = "tytul_zastepczy";
 //        }
         Log.d(TAG, "zapisuję z tytułem " + mTitle);
-        if (!"".equals(mPictureURL)){
+        if (!"".equals(mPictureURL)) {
             Log.d(TAG, "adres zdjęcia " + mPictureURL);
             Picasso.with(getApplicationContext()).load(mPictureURL)
                     .noFade().resize(200, 200).centerCrop()
@@ -282,8 +283,8 @@ public class RecipeActivity extends AppCompatActivity {
         startActivity(i);
     }
 
-    private static Target getTarget(final String title){
-        Target target = new Target(){
+    private static Target getTarget(final String title) {
+        Target target = new Target() {
 
             @Override
             public void onBitmapLoaded(final Bitmap bitmap, Picasso.LoadedFrom from) {
@@ -291,7 +292,7 @@ public class RecipeActivity extends AppCompatActivity {
                     @Override
                     public void run() {
 
-                        File file = new File( Environment.getExternalStorageDirectory().getPath(), title);
+                        File file = new File(Environment.getExternalStorageDirectory().getPath(), title);
                         Log.d("FILE DOWNLOAD", "stworzyłem file" + file.getName());
 //                        new File(
 //                                mContext.getExternalCacheDir().getAbsolutePath(), FILENAME_ingredients);
@@ -335,4 +336,55 @@ public class RecipeActivity extends AppCompatActivity {
 
     }
 
+
+    Runnable mRunnableGo = new Runnable() {
+        @Override
+        public void run() {
+            Log.i(TAG, "go runnable");
+            if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_NOT_SPEAKING) {
+                mmyReader.read();
+            }
+        }
+    };
+    Runnable mRunnableStop = new Runnable() {
+        @Override
+        public void run() {
+            Log.i(TAG, "stop runnable");
+            if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_SPEAKING) {
+                mmyReader.pauseReading();
+            }
+        }
+    };
+
+    Runnable mRunnableIng = new Runnable() {
+        @Override
+        public void run() {
+            Log.i(TAG, "runnableIng runnable");
+            mmyReader.readButtonsChanged(true, false);
+            if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_NOT_SPEAKING) {
+                mmyReader.read();
+            }
+
+        }
+    };
+    Runnable mRunnablePrep = new Runnable() {
+        @Override
+        public void run() {
+            Log.i(TAG, "runnablePrep runnable");
+            mmyReader.readButtonsChanged(false, true);
+            if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_NOT_SPEAKING) {
+                mmyReader.read();
+            }
+        }
+    };
+    Runnable mRunnableAll = new Runnable() {
+        @Override
+        public void run() {
+            Log.i(TAG, "runnableAll runnable");
+            mmyReader.readButtonsChanged(true, true);
+            if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_NOT_SPEAKING) {
+                mmyReader.read();
+            }
+        }
+    };
 }
