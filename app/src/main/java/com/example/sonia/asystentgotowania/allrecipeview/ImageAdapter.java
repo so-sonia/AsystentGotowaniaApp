@@ -1,7 +1,6 @@
 package com.example.sonia.asystentgotowania.allrecipeview;
 
 import android.content.Context;
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
@@ -9,30 +8,27 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import android.content.Context;
-import android.support.v4.content.ContextCompat;
 
+import com.example.sonia.asystentgotowania.Constants;
 import com.example.sonia.asystentgotowania.databaseforrecipes.RecipeEntity;
 import com.squareup.picasso.Picasso;
 
 import com.example.sonia.asystentgotowania.R;
 import com.example.sonia.asystentgotowania.databaseforrecipes.DataBaseSingleton;
-import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.webkit.WebViewDatabase.getInstance;
-
 
 public class ImageAdapter extends BaseAdapter {
+    private static final String TAG = Constants.APP_TAG.concat(ImageAdapter.class.getSimpleName());
     private Context mContext;
     private ArrayList<File> mPictureFiles;
 
-    public ImageAdapter(Context c) {
-        mContext = c;
-        mPictureFiles = new ArrayList<File>();
+    public ImageAdapter(Context context) {
+        mContext = context;
+        mPictureFiles = new ArrayList<>();
         new QueryDatabase().execute();
     }
 
@@ -91,7 +87,10 @@ public class ImageAdapter extends BaseAdapter {
 
         @Override
         protected void onPostExecute(List<RecipeEntity> recipeList) {
+            Log.i(TAG, "Recipes Loaded from DB");
+            Log.d(TAG, "All recipies: " + writeDownAllRecipies(recipeList));
             mPictureFiles = getAllSavedRecipes(recipeList);
+            notifyDataSetChanged();
         }
     }
 
@@ -106,4 +105,12 @@ public class ImageAdapter extends BaseAdapter {
 //            R.drawable.ic_play_r, R.drawable.ic_play_r,
 //            R.drawable.ic_play_r, R.drawable.ic_play_r,
 //    };
+
+    private String writeDownAllRecipies(List<RecipeEntity> recipeList){
+        String recipies = "";
+        for (RecipeEntity recipeEntity:recipeList){
+            recipies = recipies.concat(" " + recipeEntity.getTitle());
+        }
+        return recipies;
+    }
 }

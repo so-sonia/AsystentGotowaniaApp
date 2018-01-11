@@ -47,6 +47,8 @@ public class RecipeActivity extends AppCompatActivity {
     Button mbtnIngredients;
     @BindView(R.id.btnPreparation)
     Button mbtnPreparation;
+    @BindView(R.id.etTitle)
+    EditText metTitle;
     @BindView(R.id.etIngredients)
     EditText metIngredients;
     @BindView(R.id.etRecipe)
@@ -70,9 +72,9 @@ public class RecipeActivity extends AppCompatActivity {
 
 
     boolean editable;
+    String mTitleText;
     String mIngredientsText;
     String mPreparationText;
-    String mTitle;
     String mPictureURL;
 
     CommandsRecognitionListener mCommandsRecognitionListener;
@@ -126,6 +128,7 @@ public class RecipeActivity extends AppCompatActivity {
 
     private class putRecipeInView extends AsyncTask<Void, Void, Void> {
 
+        String title;
         String ingredients;
         String instructions;
 
@@ -137,12 +140,13 @@ public class RecipeActivity extends AppCompatActivity {
                 JSONObject recipeJson = newRecipe.getRecipeInJSON();
                 ingredients = MyJSONhelper.getIngredientsFromJSON(recipeJson);
                 instructions = MyJSONhelper.getPreparationFromJSON(recipeJson);
-                mTitle = MyJSONhelper.getTitleFromJSON(recipeJson);
+                title = MyJSONhelper.getTitleFromJSON(recipeJson);
                 mPictureURL = MyJSONhelper.getPictureURLFromJSON(recipeJson);
             }
         }
 
         private void setRecipeTextsInViews() {
+            metTitle.setText(mTitleText);
             metIngredients.setText(mIngredientsText);
             metRecipe.setText(mPreparationText);
         }
@@ -155,6 +159,7 @@ public class RecipeActivity extends AppCompatActivity {
             if (Intent.ACTION_SEND.equals(action) && type != null && "text/plain".equals(type)) {
                 getRecipeFormLink(intent);
             } else {
+                title = "Dynia";
                 ingredients = "mąka\n sól\n woda\n wino\n";
                 instructions = "Dynię obrać ze skórki, usunąć nasiona, miąższ pokroić w kostkę. Ziemniaki obrać i też pokroić w kostkę. \n" +
                         "W większym garnku na maśle zeszklić pokrojoną w kosteczkę cebulę oraz obrany i pokrojony na plasterki czosnek. Dodać dynię i ziemniaki, doprawić solą, wsypać kurkumę i dodać imbir. Smażyć co chwilę mieszając przez ok. 5 minut.\n" +
@@ -167,6 +172,7 @@ public class RecipeActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Void result) {
+            mTitleText = title;
             mIngredientsText = ingredients;
             mPreparationText = instructions;
             setRecipeTextsInViews();
@@ -211,6 +217,10 @@ public class RecipeActivity extends AppCompatActivity {
                 inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),
                         InputMethodManager.HIDE_NOT_ALWAYS);
             }
+            metTitle.setFocusable(false);
+            metTitle.setClickable(false);
+            metTitle.setFocusableInTouchMode(false);
+            metTitle.setCursorVisible(false);
             metIngredients.setFocusable(false);
             metIngredients.setClickable(false);
             metIngredients.setFocusableInTouchMode(false);
@@ -222,11 +232,21 @@ public class RecipeActivity extends AppCompatActivity {
             mbtnEdit.setBackground(editingIcon);
             editable = false;
 
-            String ingredients = metIngredients.getText().toString();
-            String preparation = metRecipe.getText().toString();
-            mmyReader.compareContent("składniki:\n" + ingredients,
-                    "przygotowanie:\n" + preparation);
+//            String title = metTitle.getText().toString();
+//            String ingredients = metIngredients.getText().toString();
+//            String preparation = metRecipe.getText().toString();
+//            mmyReader.compareContent("składniki:\n" + ingredients,
+//                    "przygotowanie:\n" + preparation);
+            mTitleText = metTitle.getText().toString();
+            mIngredientsText = metIngredients.getText().toString();
+            mPreparationText = metRecipe.getText().toString();
+            mmyReader.compareContent("składniki:\n" + mIngredientsText,
+                    "przygotowanie:\n" + mPreparationText);
         } else {
+            metTitle.setFocusable(true);
+            metTitle.setClickable(true);
+            metTitle.setFocusableInTouchMode(true);
+            metTitle.setCursorVisible(true);
             metIngredients.setFocusable(true);
             metIngredients.setClickable(true);
             metIngredients.setFocusableInTouchMode(true);
@@ -268,19 +288,17 @@ public class RecipeActivity extends AppCompatActivity {
 
     @OnClick(R.id.btnSave)
     public void saveRecipe() {
-//        if ("".equals(mTitle)){
-        mTitle = "tytul_zastepczy";
-//        }
-        Log.d(TAG, "zapisuję z tytułem " + mTitle);
+        Log.d(TAG, "zapisuję z tytułem " + mTitleText);
         if (!"".equals(mPictureURL)) {
             Log.d(TAG, "adres zdjęcia " + mPictureURL);
             Picasso.with(getApplicationContext()).load(mPictureURL)
                     .noFade().resize(200, 200).centerCrop()
-                    .into(getTarget(mTitle));
+                    .into(getTarget(mTitleText));
         }
-        new RecipeSaver().execute(mTitle, mIngredientsText, mPreparationText);
+        new RecipeSaver().execute(mTitleText, mIngredientsText, mPreparationText);
         Intent i = new Intent(getApplicationContext(), AllRecipesActivity.class);
         startActivity(i);
+        finish();
     }
 
     private static Target getTarget(final String title) {
@@ -326,11 +344,13 @@ public class RecipeActivity extends AppCompatActivity {
     private class RecipeSaver extends AsyncTask<String, Void, Void> {
         @Override
         protected Void doInBackground(String... params) {
+            Log.d(TAG, "zapisuję do Bazy Danych");
             String recipeTitle = params[0];
             String ingredients = params[1];
             String preparation = params[2];
             RecipeEntity recipe = new RecipeEntity(recipeTitle, ingredients, preparation);
             DataBaseSingleton.getInstance(getApplicationContext()).saveRecipe(recipe);
+            Log.d(TAG, "zapisany do bazy: " + recipeTitle + "\n" + ingredients+ "\n" + preparation);
             return null;
         }
 

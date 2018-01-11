@@ -172,9 +172,7 @@ public class MyReader {
 
                     // Start Playing Speech
                     playMedia();
-
                 }
-
             }
 
             @Override
@@ -246,8 +244,8 @@ public class MyReader {
             mPreparationText = instructions;
         }
         prepareFiles();
-
     }
+
 
 
 }
