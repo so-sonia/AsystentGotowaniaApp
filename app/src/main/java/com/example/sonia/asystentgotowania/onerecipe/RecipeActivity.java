@@ -20,6 +20,7 @@ import com.example.sonia.asystentgotowania.R;
 import com.example.sonia.asystentgotowania.allrecipeview.AllRecipesActivity;
 import com.example.sonia.asystentgotowania.databaseforrecipes.DataBaseSingleton;
 import com.example.sonia.asystentgotowania.databaseforrecipes.RecipeEntity;
+import com.example.sonia.asystentgotowania.databaseforrecipes.RecipeParser;
 import com.example.sonia.asystentgotowania.onerecipe.listening.CommandsRecognitionListener;
 import com.example.sonia.asystentgotowania.onerecipe.reading.MyJSONhelper;
 import com.example.sonia.asystentgotowania.onerecipe.reading.MyReader;
@@ -27,6 +28,7 @@ import com.example.sonia.asystentgotowania.onerecipe.recipefromlink.RecipeFromLi
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -71,6 +73,9 @@ public class RecipeActivity extends AppCompatActivity {
     Drawable checkmarkIcon;
 
 
+    //variable necessary while saving - if less than 0 recipe is inserted,
+    // otherwise it exists already in database, so is updated
+    static long mRecipeID = -1;
     boolean editable;
     String mTitleText;
     String mIngredientsText;
@@ -128,9 +133,9 @@ public class RecipeActivity extends AppCompatActivity {
 
     private class putRecipeInView extends AsyncTask<Void, Void, Void> {
 
-        String title;
-        String ingredients;
-        String instructions;
+        String title = "";
+        String ingredients = "";
+        String instructions = "";
 
         private void getRecipeFormLink(Intent intent) {
             String link = intent.getStringExtra(Intent.EXTRA_TEXT);
@@ -158,14 +163,21 @@ public class RecipeActivity extends AppCompatActivity {
             String type = intent.getType();
             if (Intent.ACTION_SEND.equals(action) && type != null && "text/plain".equals(type)) {
                 getRecipeFormLink(intent);
-            } else {
-                title = "Dynia";
-                ingredients = "mąka\n sól\n woda\n wino\n";
-                instructions = "Dynię obrać ze skórki, usunąć nasiona, miąższ pokroić w kostkę. Ziemniaki obrać i też pokroić w kostkę. \n" +
-                        "W większym garnku na maśle zeszklić pokrojoną w kosteczkę cebulę oraz obrany i pokrojony na plasterki czosnek. Dodać dynię i ziemniaki, doprawić solą, wsypać kurkumę i dodać imbir. Smażyć co chwilę mieszając przez ok. 5 minut.\n" +
-                        "Wlać gorący bulion, przykryć i zagotować. Zmniejszyć ogień do średniego i gotować przez ok. 10 minut. \n" +
-                        "Świeżego pomidora sparzyć, obrać, pokroić na ćwiartki, usunąć szypułki oraz nasiona z komór. Miąższ pokroić w kosteczkę i dodać do zupy. Pomidory z puszki są już gotowe do użycia, wystarczy dodać do potrawy.\n" +
-                        "Wymieszać i gotować przez 5 minut, do miękkości warzyw. Zmiksować w blenderze z dodatkiem mleka.\n";
+                mRecipeID = -1;
+            } else if (intent.hasExtra(Constants.INTENT_WITH_RECIPE_FROM_MAIN)) {
+
+                String intentMessage = intent.getStringExtra(Constants.INTENT_WITH_RECIPE_FROM_MAIN);
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(intentMessage);
+                } catch (JSONException e) {
+                    Log.d(TAG, "JSON: ", e);
+                }
+                RecipeEntity recipeEntity = RecipeParser.JSONToRecipeEntity(jsonObject);
+                mRecipeID = recipeEntity.getUid();
+                title = recipeEntity.getTitle();
+                ingredients = recipeEntity.getIngredients();
+                instructions = recipeEntity.getPreparation();
             }
             return null;
         }
@@ -232,14 +244,11 @@ public class RecipeActivity extends AppCompatActivity {
             mbtnEdit.setBackground(editingIcon);
             editable = false;
 
-//            String title = metTitle.getText().toString();
-//            String ingredients = metIngredients.getText().toString();
-//            String preparation = metRecipe.getText().toString();
-//            mmyReader.compareContent("składniki:\n" + ingredients,
-//                    "przygotowanie:\n" + preparation);
+
             mTitleText = metTitle.getText().toString();
             mIngredientsText = metIngredients.getText().toString();
             mPreparationText = metRecipe.getText().toString();
+            Log.d(TAG, "Recipe changed: " + mTitleText + "\n" + mIngredientsText + "\n" + mPreparationText);
             mmyReader.compareContent("składniki:\n" + mIngredientsText,
                     "przygotowanie:\n" + mPreparationText);
         } else {
@@ -288,14 +297,9 @@ public class RecipeActivity extends AppCompatActivity {
 
     @OnClick(R.id.btnSave)
     public void saveRecipe() {
-        Log.d(TAG, "zapisuję z tytułem " + mTitleText);
-        if (!"".equals(mPictureURL)) {
-            Log.d(TAG, "adres zdjęcia " + mPictureURL);
-            Picasso.with(getApplicationContext()).load(mPictureURL)
-                    .noFade().resize(200, 200).centerCrop()
-                    .into(getTarget(mTitleText));
-        }
-        new RecipeSaver().execute(mTitleText, mIngredientsText, mPreparationText);
+        Log.i(TAG, "try to save: " + String.valueOf(mRecipeID) + "\n" + mTitleText + "\n" +
+                mIngredientsText + "\n" + mPreparationText);
+        new RecipeSaver().execute(String.valueOf(mRecipeID), mTitleText, mIngredientsText, mPreparationText);
         Intent i = new Intent(getApplicationContext(), AllRecipesActivity.class);
         startActivity(i);
         finish();
@@ -345,12 +349,23 @@ public class RecipeActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(String... params) {
             Log.d(TAG, "zapisuję do Bazy Danych");
-            String recipeTitle = params[0];
-            String ingredients = params[1];
-            String preparation = params[2];
-            RecipeEntity recipe = new RecipeEntity(recipeTitle, ingredients, preparation);
-            DataBaseSingleton.getInstance(getApplicationContext()).saveRecipe(recipe);
-            Log.d(TAG, "zapisany do bazy: " + recipeTitle + "\n" + ingredients+ "\n" + preparation);
+            long recipeID = Long.parseLong(params[0]);
+            String recipeTitle = params[1];
+            String ingredients = params[2];
+            String preparation = params[3];
+
+            Log.d(TAG, "RecipeSaver: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation);
+            //not in database at this moment
+            if (recipeID < 0) {
+                RecipeEntity recipe = new RecipeEntity(recipeTitle, ingredients, preparation);
+                DataBaseSingleton.getInstance(getApplicationContext()).saveRecipe(recipe);
+            }
+            //already in database
+            else {
+                RecipeEntity recipe = new RecipeEntity(recipeID, recipeTitle, ingredients, preparation);
+                DataBaseSingleton.getInstance(getApplicationContext()).updateRecipe(recipe);
+            }
+            Log.d(TAG, "zapisany do bazy: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation);
             return null;
         }
 

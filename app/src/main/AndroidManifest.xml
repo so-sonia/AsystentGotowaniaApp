@@ -16,31 +16,18 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         android:networkSecurityConfig="@xml/network_security_config"
-        <!--<activity android:name=".allrecipeview.AllRecipesActivity">-->
-            <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.MAIN" />-->
-                <!--<category android:name="android.intent.category.LAUNCHER" />-->
-            <!--</intent-filter>-->
-        <!--</activity>-->
-        <!--<activity android:name=".onerecipe.RecipeActivity">-->
-            <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.SEND" />-->
-                <!--<category android:name="android.intent.category.DEFAULT" />-->
-                <!--<data android:mimeType="text/plain" />-->
-            <!--</intent-filter>-->
-        <!--</activity>-->
-        <activity android:name=".onerecipe.RecipeActivity">
+        <activity android:name=".allrecipeview.AllRecipesActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity android:name=".onerecipe.RecipeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
-        </activity>
-        <activity android:name=".allrecipeview.AllRecipesActivity">
         </activity>
     </application>
 

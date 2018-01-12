@@ -11,6 +11,13 @@ public class RecipeEntity {
     private String ingredients;
     private String preparation;
 
+    public RecipeEntity(long id, String title, String ingredients, String preparation) {
+        this.uid = id;
+        this.title = title;
+        this.ingredients = ingredients;
+        this.preparation = preparation;
+    }
+
     public RecipeEntity(String title, String ingredients, String preparation) {
         this.title = title;
         this.ingredients = ingredients;
