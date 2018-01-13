@@ -1,14 +1,16 @@
 package com.example.sonia.asystentgotowania.onerecipe;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -28,11 +30,8 @@ import com.example.sonia.asystentgotowania.onerecipe.reading.MyJSONhelper;
 import com.example.sonia.asystentgotowania.onerecipe.reading.MyReader;
 import com.example.sonia.asystentgotowania.onerecipe.recipefromlink.RecipeFromLink;
 import com.jakewharton.picasso.OkHttp3Downloader;
-import com.squareup.picasso.OkHttpDownloader;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
-import com.squareup.picasso.Picasso.Builder;
-import okhttp3.OkHttpClient;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -89,6 +88,7 @@ public class RecipeActivity extends AppCompatActivity {
     String mPictureURL;
     String mPictureTitle;
     Target mTarget;
+    private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
 
     CommandsRecognitionListener mCommandsRecognitionListener;
     MyReader mmyReader;
@@ -135,6 +135,13 @@ public class RecipeActivity extends AppCompatActivity {
         setContentView(R.layout.view_recipe);
         ButterKnife.bind(this);
         editable = false;
+
+        //microfone permission
+        int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSIONS_REQUEST_RECORD_AUDIO);
+            return;
+        }
 
         new putRecipeInView().execute();
         mCommandsRecognitionListener = new CommandsRecognitionListener(getApplicationContext());
@@ -315,7 +322,7 @@ public class RecipeActivity extends AppCompatActivity {
         }
 
         Log.i(TAG, "try to save: " + String.valueOf(mRecipeID) + "\n" + mTitleText + "\n" +
-                mIngredientsText + "\n" + mPreparationText  + "\n" + mPictureTitle);
+                mIngredientsText + "\n" + mPreparationText + "\n" + mPictureTitle);
         new RecipeSaver().execute(String.valueOf(mRecipeID), mTitleText, mIngredientsText,
                 mPreparationText, mPictureTitle);
 
@@ -323,7 +330,7 @@ public class RecipeActivity extends AppCompatActivity {
 
 
         if (mRecipeID < 0) {
-            if (!"".equals(mPictureURL)){
+            if (!"".equals(mPictureURL)) {
                 Log.d(TAG, "adres zdjęcia " + mPictureURL);
                 Log.d(TAG, "zapisane jako " + mPictureTitle);
 
@@ -381,9 +388,11 @@ public class RecipeActivity extends AppCompatActivity {
             @Override
             public void onBitmapFailed(Drawable errorDrawable) {
             }
+
             @Override
             public void onPrepareLoad(Drawable placeHolderDrawable) {
-                if (placeHolderDrawable != null) {}
+                if (placeHolderDrawable != null) {
+                }
             }
         };
     }
@@ -399,7 +408,7 @@ public class RecipeActivity extends AppCompatActivity {
             String pictureTitle = params[4];
 
             Log.d(TAG, "RecipeSaver: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation
-                        + "\n" + pictureTitle);
+                    + "\n" + pictureTitle);
             //not in database at this moment
             if (recipeID < 0) {
                 RecipeEntity recipe = new RecipeEntity(recipeTitle, ingredients, preparation, pictureTitle);
@@ -411,7 +420,7 @@ public class RecipeActivity extends AppCompatActivity {
                 DataBaseSingleton.getInstance(getApplicationContext()).updateRecipe(recipe);
             }
             Log.d(TAG, "zapisany do bazy: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation
-                        + "\n" + pictureTitle);
+                    + "\n" + pictureTitle);
             return null;
         }
 

@@ -27,6 +27,7 @@ public class CommandsRecognitionListener implements RecognitionListener {
     private Runnable mRunnableIngredients = null;
     private Runnable mRunnablePreparation = null;
     private Runnable mRunnableAll = null;
+    private SpeechRecognizer mRecognizer;
 
 
     public CommandsRecognitionListener(Context context) {
@@ -50,6 +51,7 @@ public class CommandsRecognitionListener implements RecognitionListener {
                 File assetDir = assets.syncAssets();
                 commandsRecognitionListener.get().setupRecognizer(assetDir);
             } catch (IOException e) {
+                Log.e(TAG, "IOerror:", e);
                 return e;
             }
             return null;
@@ -66,31 +68,29 @@ public class CommandsRecognitionListener implements RecognitionListener {
     }
 
     private void switchSearch(String searchName) {
-        recognizer.stop();
+        mRecognizer.stop();
         Log.i(TAG, "say command");
-        recognizer.startListening(searchName);
+        mRecognizer.startListening(searchName);
     }
 
     private void setupRecognizer(File assetsDir) throws IOException {
-        recognizer = SpeechRecognizerSetup.defaultSetup()
+        mRecognizer = SpeechRecognizerSetup.defaultSetup()
                 .setAcousticModel(new File(assetsDir, "en-us-ptm"))
                 .setDictionary(new File(assetsDir, "cmudict-en-us.dict"))
                 .setRawLogDir(assetsDir) // To disable logging of raw audio comment out this call (takes a lot of space on the device)
                 .getRecognizer();
-        recognizer.addListener(this);
+        mRecognizer.addListener(this);
 
 
         File menuGrammar = new File(assetsDir, "commands.gram");
-        recognizer.addKeywordSearch(SEARCH_KEYWORDS, menuGrammar);
+        mRecognizer.addKeywordSearch(SEARCH_KEYWORDS, menuGrammar);
     }
-
-    SpeechRecognizer recognizer;
 
     public void destroy() {
         Log.i(TAG, "destroy");
-        if (recognizer != null) {
-            recognizer.cancel();
-            recognizer.shutdown();
+        if (mRecognizer != null) {
+            mRecognizer.cancel();
+            mRecognizer.shutdown();
         }
     }
 
