@@ -9,7 +9,7 @@ public class RecipeParser {
     public static final String JSON_RECIPE_TITLE = "recipe_title";
     public static final String JSON_RECIPE_INGREDIENTS = "recipe_ingredients";
     public static final String JSON_RECIPE_PREPARATION = "recipe_preparation";
-    public static final String JSON_RECIPE_PICTUREURL = "picture_url";
+    public static final String JSON_RECIPE_PICTURETITLE= "picture_title";
 
     public static JSONObject recipeEntityToJSON(RecipeEntity recipeEntity) {
         JSONObject jsonObject = new JSONObject();
@@ -18,6 +18,7 @@ public class RecipeParser {
             jsonObject.put(JSON_RECIPE_TITLE, recipeEntity.getTitle());
             jsonObject.put(JSON_RECIPE_INGREDIENTS, recipeEntity.getIngredients());
             jsonObject.put(JSON_RECIPE_PREPARATION, recipeEntity.getPreparation());
+            jsonObject.put(JSON_RECIPE_PICTURETITLE, recipeEntity.getPictureTitle());
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -37,10 +38,11 @@ public class RecipeParser {
                 String title = jsonObject.getString(JSON_RECIPE_TITLE);
                 String ingredients = jsonObject.getString(JSON_RECIPE_INGREDIENTS);
                 String preparation = jsonObject.getString(JSON_RECIPE_PREPARATION);
+                String pictureTitle = jsonObject.getString(JSON_RECIPE_PICTURETITLE);
                 if (uid < 0) {
-                    recipeEntity = new RecipeEntity(title, ingredients, preparation);
+                    recipeEntity = new RecipeEntity(title, ingredients, preparation, pictureTitle);
                 } else {
-                    recipeEntity = new RecipeEntity(uid, title, ingredients, preparation);
+                    recipeEntity = new RecipeEntity(uid, title, ingredients, preparation, pictureTitle);
                 }
             } catch (JSONException e) {
                 e.printStackTrace();

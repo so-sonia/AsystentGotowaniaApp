@@ -1,6 +1,7 @@
 package com.example.sonia.asystentgotowania.allrecipeview;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,7 +15,9 @@ import com.example.sonia.asystentgotowania.Constants;
 import com.example.sonia.asystentgotowania.R;
 import com.example.sonia.asystentgotowania.databaseforrecipes.DataBaseSingleton;
 import com.example.sonia.asystentgotowania.databaseforrecipes.RecipeEntity;
+import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +29,7 @@ public class RecipeAdapter extends BaseAdapter {
     private static final String TAG = Constants.APP_TAG.concat(RecipeAdapter.class.getSimpleName());
     private Context mContext;
     private List<RecipeEntity> mRecipeList; // ma dlugie i
-    // niepotrzebne tutaj skladniki i przygotowanie, ale bedzie tak latwiej otierac oneRecipe
+    // niepotrzebne tutaj skladniki i przygotowanie, ale bedzie tak latwiej otwierac oneRecipe
 
     public RecipeEntity getRecipe(int position) {
         return mRecipeList.get(position);
@@ -35,6 +38,11 @@ public class RecipeAdapter extends BaseAdapter {
     public void removeRecipeAt(int position) {
         mRecipeList.remove(position);
         notifyDataSetChanged();
+
+        ContextWrapper cw = new ContextWrapper(mContext);
+        final File directory = cw.getExternalFilesDir("pictures");
+        File myImageFile = new File(directory, mRecipeList.get(position).getPictureTitle());
+        if (myImageFile.delete()) Log.d(TAG, "image on the disk deleted successfully!");
     }
 
     public RecipeAdapter(Context context) {
@@ -70,12 +78,15 @@ public class RecipeAdapter extends BaseAdapter {
         holder.title.setText(mRecipeList.get(position).getTitle());
         //TODO image in database, get image from mRecipeList.get(position).getImageUri()<-this method
         // doesn't exist at this moment
-//        Picasso.with(mContext).load("todopart")
-//                .placeholder(R.drawable.default_picture_r)
-//                .error(R.drawable.default_picture_r)
-//                .noFade().resize(200, 200).centerCrop()
-//                .into( holder.image);
-        holder.image.setImageResource(R.drawable.default_picture_r);
+
+        ContextWrapper cw = new ContextWrapper(mContext);
+        final File directory = cw.getExternalFilesDir("pictures");
+        File myImageFile = new File(directory, mRecipeList.get(position).getPictureTitle());
+
+        Picasso.with(mContext).load(myImageFile)
+                .placeholder(R.drawable.default_picture_r)
+                .error(R.drawable.default_picture_r)
+                .into( holder.image);
 
         return view;
     }

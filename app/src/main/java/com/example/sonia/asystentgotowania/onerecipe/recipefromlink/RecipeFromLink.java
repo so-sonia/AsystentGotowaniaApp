@@ -151,6 +151,10 @@ public class RecipeFromLink {
         if ((indexSlash = titleClean.indexOf("|"))>0){
             titleClean = titleClean.substring(0, indexSlash);
         }
+        Log.d(TAG, titleClean);
+//        if ((indexSlash = titleClean.indexOf("-"))>0){
+//            titleClean = titleClean.substring(0, indexSlash);
+//        }
         return(titleClean);
     }
 

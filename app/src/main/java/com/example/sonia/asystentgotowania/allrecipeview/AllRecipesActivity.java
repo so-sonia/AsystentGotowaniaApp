@@ -66,7 +66,7 @@ public class AllRecipesActivity extends AppCompatActivity {
                         RecipeEntity recipeEntity = recipeAdapter.getRecipe(position);
                         new RecipeDeleter().execute(String.valueOf(recipeEntity.getUid()),
                                 recipeEntity.getTitle(), recipeEntity.getIngredients(),
-                                recipeEntity.getPreparation());
+                                recipeEntity.getPreparation(), recipeEntity.getPictureTitle());
                         dialog.dismiss();
                     }
                 });
@@ -88,16 +88,19 @@ public class AllRecipesActivity extends AppCompatActivity {
     private class RecipeDeleter extends AsyncTask<String, Void, Void> {
         @Override
         protected Void doInBackground(String... params) {
-            Log.d(TAG, "zapisuję do Bazy Danych");
+            Log.d(TAG, "usuwam z Bazy Danych");
             long recipeID = Long.parseLong(params[0]);
             String recipeTitle = params[1];
             String ingredients = params[2];
             String preparation = params[3];
+            String pictureTitle = params[4];
 
-            Log.d(TAG, "RecipeDeleter: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation);
-            RecipeEntity recipe = new RecipeEntity(recipeID, recipeTitle, ingredients, preparation);
+            Log.d(TAG, "RecipeDeleter: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation
+            + "\n" + pictureTitle);
+            RecipeEntity recipe = new RecipeEntity(recipeID, recipeTitle, ingredients, preparation, pictureTitle);
             DataBaseSingleton.getInstance(getApplicationContext()).deleteRecipe(recipe);
-            Log.d(TAG, "usuniety z bazy: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation);
+            Log.d(TAG, "usuniety z bazy: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation
+            + "\n" + pictureTitle);
             return null;
         }
 

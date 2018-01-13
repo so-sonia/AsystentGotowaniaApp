@@ -10,18 +10,21 @@ public class RecipeEntity {
     private String title;
     private String ingredients;
     private String preparation;
+    private String pictureTitle;
 
-    public RecipeEntity(long id, String title, String ingredients, String preparation) {
+    public RecipeEntity(long id, String title, String ingredients, String preparation, String pictureTitle) {
         this.uid = id;
         this.title = title;
         this.ingredients = ingredients;
         this.preparation = preparation;
+        this.pictureTitle = pictureTitle;
     }
 
-    public RecipeEntity(String title, String ingredients, String preparation) {
+    public RecipeEntity(String title, String ingredients, String preparation, String pictureTitle) {
         this.title = title;
         this.ingredients = ingredients;
         this.preparation = preparation;
+        this.pictureTitle = pictureTitle;
     }
 
 
@@ -55,5 +58,13 @@ public class RecipeEntity {
 
     public void setPreparation(String preparation) {
         this.preparation = preparation;
+    }
+
+    public String getPictureTitle() {
+        return pictureTitle;
+    }
+
+    public void setPictureTitle(String pictureTitle) {
+        this.pictureTitle = pictureTitle;
     }
 }

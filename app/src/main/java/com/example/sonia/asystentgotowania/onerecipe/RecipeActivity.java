@@ -1,6 +1,7 @@
 package com.example.sonia.asystentgotowania.onerecipe;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -25,8 +26,12 @@ import com.example.sonia.asystentgotowania.onerecipe.listening.CommandsRecogniti
 import com.example.sonia.asystentgotowania.onerecipe.reading.MyJSONhelper;
 import com.example.sonia.asystentgotowania.onerecipe.reading.MyReader;
 import com.example.sonia.asystentgotowania.onerecipe.recipefromlink.RecipeFromLink;
+import com.jakewharton.picasso.OkHttp3Downloader;
+import com.squareup.picasso.OkHttpDownloader;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
+import com.squareup.picasso.Picasso.Builder;
+import okhttp3.OkHttpClient;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -81,6 +86,8 @@ public class RecipeActivity extends AppCompatActivity {
     String mIngredientsText;
     String mPreparationText;
     String mPictureURL;
+    String mPictureTitle;
+    Target mTarget;
 
     CommandsRecognitionListener mCommandsRecognitionListener;
     MyReader mmyReader;
@@ -136,6 +143,7 @@ public class RecipeActivity extends AppCompatActivity {
         String title = "";
         String ingredients = "";
         String instructions = "";
+        String pictureTitle = "";
 
         private void getRecipeFormLink(Intent intent) {
             String link = intent.getStringExtra(Intent.EXTRA_TEXT);
@@ -178,6 +186,7 @@ public class RecipeActivity extends AppCompatActivity {
                 title = recipeEntity.getTitle();
                 ingredients = recipeEntity.getIngredients();
                 instructions = recipeEntity.getPreparation();
+                pictureTitle = recipeEntity.getPictureTitle();
             }
             return null;
         }
@@ -187,6 +196,7 @@ public class RecipeActivity extends AppCompatActivity {
             mTitleText = title;
             mIngredientsText = ingredients;
             mPreparationText = instructions;
+            mPictureTitle = pictureTitle;
             setRecipeTextsInViews();
             mmyReader = new MyReader(getApplicationContext(), "składniki:\n" + mIngredientsText,
                     "przygotowanie:\n" + mPreparationText);
@@ -297,52 +307,83 @@ public class RecipeActivity extends AppCompatActivity {
 
     @OnClick(R.id.btnSave)
     public void saveRecipe() {
+        if (mRecipeID < 0) {
+            String pictureTitle = mTitleText + ".jpeg";
+            mPictureTitle = pictureTitle.replace(" ", "_");
+        }
+
         Log.i(TAG, "try to save: " + String.valueOf(mRecipeID) + "\n" + mTitleText + "\n" +
-                mIngredientsText + "\n" + mPreparationText);
-        new RecipeSaver().execute(String.valueOf(mRecipeID), mTitleText, mIngredientsText, mPreparationText);
+                mIngredientsText + "\n" + mPreparationText  + "\n" + mPictureTitle);
+        new RecipeSaver().execute(String.valueOf(mRecipeID), mTitleText, mIngredientsText,
+                mPreparationText, mPictureTitle);
+
+        Picasso.with(getApplicationContext()).setLoggingEnabled(true);
+
+
+        if (mRecipeID < 0) {
+            if (!"".equals(mPictureURL)){
+                Log.d(TAG, "adres zdjęcia " + mPictureURL);
+                Log.d(TAG, "zapisane jako " + mPictureTitle);
+
+
+                mTarget = picassoImageTarget(getApplicationContext(), mPictureTitle);
+
+                Picasso mBuilder = new Picasso.Builder(getApplicationContext())
+                        .loggingEnabled(true)
+                        .indicatorsEnabled(true)
+                        .downloader(new OkHttp3Downloader(getApplicationContext()))
+                        .build();
+
+                mBuilder.load(mPictureURL)
+                        .noFade().resize(200, 200).centerCrop()
+                        .into(mTarget);
+            }
+        }
         Intent i = new Intent(getApplicationContext(), AllRecipesActivity.class);
         startActivity(i);
         finish();
     }
 
-    private static Target getTarget(final String title) {
-        Target target = new Target() {
-
+    private final Target picassoImageTarget(Context context, final String imageName) {
+        Log.d("picassoImageTarget", " picassoImageTarget");
+        ContextWrapper cw = new ContextWrapper(context);
+        final File directory = cw.getExternalFilesDir("pictures");
+        Log.d("picassoImageTarget", directory.getAbsolutePath());
+        return new Target() {
             @Override
             public void onBitmapLoaded(final Bitmap bitmap, Picasso.LoadedFrom from) {
+                Log.d("picassoImageTarget", "picture loaded");
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-
-                        File file = new File(Environment.getExternalStorageDirectory().getPath(), title);
-                        Log.d("FILE DOWNLOAD", "stworzyłem file" + file.getName());
-//                        new File(
-//                                mContext.getExternalCacheDir().getAbsolutePath(), FILENAME_ingredients);
+                        final File myImageFile = new File(directory, imageName); // Create image file
+                        FileOutputStream fos = null;
                         try {
-                            file.createNewFile();
-                            FileOutputStream ostream = new FileOutputStream(file);
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
-                            ostream.flush();
-                            ostream.close();
+                            fos = new FileOutputStream(myImageFile);
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
                         } catch (IOException e) {
-                            Log.e("IOException", e.getLocalizedMessage());
+                            e.printStackTrace();
+                        } finally {
+                            try {
+                                fos.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
+                        Log.i("image", "image saved to >>>" + myImageFile.getAbsolutePath());
+
                     }
                 }).start();
-
             }
 
             @Override
             public void onBitmapFailed(Drawable errorDrawable) {
-
             }
-
             @Override
             public void onPrepareLoad(Drawable placeHolderDrawable) {
-
+                if (placeHolderDrawable != null) {}
             }
         };
-        return target;
     }
 
     private class RecipeSaver extends AsyncTask<String, Void, Void> {
@@ -353,19 +394,22 @@ public class RecipeActivity extends AppCompatActivity {
             String recipeTitle = params[1];
             String ingredients = params[2];
             String preparation = params[3];
+            String pictureTitle = params[4];
 
-            Log.d(TAG, "RecipeSaver: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation);
+            Log.d(TAG, "RecipeSaver: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation
+                        + "\n" + pictureTitle);
             //not in database at this moment
             if (recipeID < 0) {
-                RecipeEntity recipe = new RecipeEntity(recipeTitle, ingredients, preparation);
+                RecipeEntity recipe = new RecipeEntity(recipeTitle, ingredients, preparation, pictureTitle);
                 DataBaseSingleton.getInstance(getApplicationContext()).saveRecipe(recipe);
             }
             //already in database
             else {
-                RecipeEntity recipe = new RecipeEntity(recipeID, recipeTitle, ingredients, preparation);
+                RecipeEntity recipe = new RecipeEntity(recipeID, recipeTitle, ingredients, preparation, pictureTitle);
                 DataBaseSingleton.getInstance(getApplicationContext()).updateRecipe(recipe);
             }
-            Log.d(TAG, "zapisany do bazy: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation);
+            Log.d(TAG, "zapisany do bazy: " + recipeID + "\n" + recipeTitle + "\n" + ingredients + "\n" + preparation
+                        + "\n" + pictureTitle);
             return null;
         }
 
