@@ -113,6 +113,14 @@ public class CommandsRecognitionListener implements RecognitionListener {
         String text = hypothesis.getHypstr();
         if (text.contains("stop")) {
             reactOn(mRunnableStop);
+        } else if (text.contains("go")) {
+            reactOn(mRunnableGo);
+        } else if (text.contains("ingredients")) {
+            reactOn(mRunnableIngredients);
+        } else if (text.contains("preparation")) {
+            reactOn(mRunnablePreparation);
+        } else if (text.contains("everything")) {
+            reactOn(mRunnableAll);
         }
         Log.i(TAG, "onPartialResult: " + text);
     }
@@ -130,7 +138,7 @@ public class CommandsRecognitionListener implements RecognitionListener {
                 reactOn(mRunnableIngredients);
             } else if (text.contains("preparation")) {
                 reactOn(mRunnablePreparation);
-            } else if (text.contains("read all")) {
+            } else if (text.contains("everything")) {
                 reactOn(mRunnableAll);
             }
             Log.i(TAG, "Result: " + hypothesis.getHypstr());
