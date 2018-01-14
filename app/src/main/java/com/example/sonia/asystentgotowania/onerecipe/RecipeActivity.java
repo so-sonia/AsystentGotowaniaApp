@@ -14,6 +14,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -66,6 +68,8 @@ public class RecipeActivity extends AppCompatActivity {
     Button mbtnEdit;
     @BindView(R.id.btnSave)
     Button mbtnSave;
+    @BindView(R.id.btnAllRecipeMenu)
+    Button mbtnAllRecipeMenu;
 
 
     @BindDrawable(R.drawable.ic_pause_r)
@@ -145,6 +149,28 @@ public class RecipeActivity extends AppCompatActivity {
 
         new putRecipeInView().execute();
         mCommandsRecognitionListener = new CommandsRecognitionListener(getApplicationContext());
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.btnAllRecipeMenu) {
+            Intent i = new Intent(getApplicationContext(), AllRecipesActivity.class);
+            startActivity(i);
+            finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     private class putRecipeInView extends AsyncTask<Void, Void, Void> {
@@ -326,8 +352,7 @@ public class RecipeActivity extends AppCompatActivity {
         new RecipeSaver().execute(String.valueOf(mRecipeID), mTitleText, mIngredientsText,
                 mPreparationText, mPictureTitle);
 
-        Picasso.with(getApplicationContext()).setLoggingEnabled(true);
-
+//        Picasso.with(getApplicationContext()).setLoggingEnabled(true);
 
         if (mRecipeID < 0) {
             if (!"".equals(mPictureURL)) {

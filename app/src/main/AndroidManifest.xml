@@ -16,14 +16,16 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         android:networkSecurityConfig="@xml/network_security_config"
-        <activity android:name=".allrecipeview.AllRecipesActivity">
+        <activity android:name=".allrecipeview.AllRecipesActivity"
+            android:label = "Asystent Gotowania">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity android:name=".onerecipe.RecipeActivity"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:label = "Asystent Gotowania">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
