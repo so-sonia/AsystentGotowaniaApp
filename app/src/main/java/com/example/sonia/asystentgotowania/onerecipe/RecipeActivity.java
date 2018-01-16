@@ -68,8 +68,8 @@ public class RecipeActivity extends AppCompatActivity {
     Button mbtnEdit;
     @BindView(R.id.btnSave)
     Button mbtnSave;
-    @BindView(R.id.btnAllRecipeMenu)
-    Button mbtnAllRecipeMenu;
+//    @BindView(R.id.btnAllRecipeMenu)
+//    Button mbtnAllRecipeMenu;
 
 
     @BindDrawable(R.drawable.ic_pause_r)

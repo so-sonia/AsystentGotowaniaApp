@@ -72,12 +72,12 @@ public class RecipeFromLink {
 
 
 
-    public Document getWebsiteContent(String link) throws IOException {
+    private Document getWebsiteContent(String link) throws IOException {
         Document doc = Jsoup.connect(link).get();
         return(doc);
     }
 
-    public void parseDocument(Document doc){
+    private void parseDocument(Document doc){
 
         String title = getRecipeTitle(doc);
         this.recipeName = title;
@@ -144,7 +144,7 @@ public class RecipeFromLink {
         this.pictureURL = pictureURL;
     }
 
-    public String getRecipeTitle(Document doc) {
+    private String getRecipeTitle(Document doc) {
         Elements title = doc.select("title");
         String titleClean = cleanParser(title);
         int indexSlash;
@@ -158,7 +158,7 @@ public class RecipeFromLink {
         return(titleClean);
     }
 
-    public String getPictureURL(Document doc, Elements el) {
+    private String getPictureURL(Document doc, Elements el) {
         String picutreURL="";
         Element picture = null;
         System.out.println("punkt nr 0");
@@ -184,7 +184,7 @@ public class RecipeFromLink {
      get pretty output (first making sure all multiple spaces are change to one space, so they are not considered
      as more than one whitespace character)*/
 
-    public String cleanParser(Element dirty){
+    private String cleanParser(Element dirty){
         dirty.select("br").append("\\n");
         dirty.select("p").prepend("\\n\\n");
         String cleaned = dirty.html().replaceAll("\\\\n", "\n");
@@ -193,7 +193,7 @@ public class RecipeFromLink {
         return cleaned;
     }
 
-    public String cleanParser(Elements dirty){
+    private String cleanParser(Elements dirty){
         dirty.select("br").append("\\n");
         dirty.select("p").prepend("\\n\\n");
         String cleaned = dirty.html().replaceAll("\\\\n", "\n");
@@ -203,7 +203,7 @@ public class RecipeFromLink {
     }
 
     /**extracts the name of the website from the link*/
-    public String getWebsiteName(String website){
+    private String getWebsiteName(String website){
         String name = website.replaceAll(".*(www\\.|http://)(.*)\\.(pl|com|tv|info|blogspot|blog).*", "$2");
         return name;
     }
@@ -229,7 +229,7 @@ public class RecipeFromLink {
         return(indexInstructions);
     }
 
-    public String getIngredients(String content, String name){
+    private String getIngredients(String content, String name){
 
         String contentLow = content.toLowerCase();
         int indexIngredients;
@@ -263,18 +263,18 @@ public class RecipeFromLink {
         return(ingredients);
     }
 
-    public String getIngredients(String content){
+    private String getIngredients(String content){
         return(getIngredients(content, ""));
     }
 
-    public String getOnlyIngredients(String content) {
+    private String getOnlyIngredients(String content) {
         int indexIngredients = getIngredientsIndex(content.toLowerCase(), 0);
         indexIngredients = content.indexOf("\n", indexIngredients) + 1;
         String ingredients = content.substring(indexIngredients, content.length());
         return(ingredients);
     }
 
-    public int getIngredientsIndex(String content, int startIndex){
+    private int getIngredientsIndex(String content, int startIndex){
         int ingredientsIndex;
         Pattern p = Pattern.compile(".*(?<!(wszystkie|pozostałe|suche|mokre) )(składniki|skład)( |:|\n)(?!((z|wy)mieszać|zmiksować|powinny)).*");
         Matcher m = p.matcher(content.substring(startIndex));
@@ -286,14 +286,14 @@ public class RecipeFromLink {
         return(ingredientsIndex);
     }
 
-    public String getOnlyInstructions(String content){
+    private String getOnlyInstructions(String content){
         int startIndex = makeInstructionIndex(content.toLowerCase(), 0);
         startIndex = content.indexOf("\n", startIndex) + 1;
         String instruction = content.substring(startIndex, content.length());
         return(instruction);
     }
 
-    public int getRecipeEnd(String content, int startIndex){
+    private int getRecipeEnd(String content, int startIndex){
         int endIndex;
         Pattern p = Pattern.compile(".*(link|smacznego|komentarze?|następny|poprzedni|popularne|zobacz|dodaj do ulubionych|"
                 + "podziel się|udostępnij|autor|etykiet(a|y)|kategori(a|e)|tagi?).*");
@@ -307,7 +307,7 @@ public class RecipeFromLink {
         return(endIndex);
     }
 
-    public String getInstructions(String content) {
+    private String getInstructions(String content) {
         String instruction;
         if (this.instructionIndex<0){
             instruction = "";
