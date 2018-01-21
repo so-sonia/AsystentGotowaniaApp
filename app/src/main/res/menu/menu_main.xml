@@ -5,6 +5,12 @@
     tools:context="com.example.sonia.asystentgotowania.onerecipe.RecipeActivity">
 
     <item
+        android:id="@+id/btnQuetsions"
+        android:icon="@drawable/question_r"
+        android:title = ""
+        app:showAsAction="always"/>
+
+    <item
         android:id="@+id/btnAllRecipeMenu"
         android:icon="@drawable/menu_r"
         android:title = ""

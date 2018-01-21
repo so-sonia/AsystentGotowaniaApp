@@ -1,5 +1,5 @@
-stop /1e-1/
-ingredients /1e-1/
+stop /1e-4/
+ingredients /1e-2/
 preparation /1e-10/
 everything /1e-1/
-go /1.0/
+go /1e2/

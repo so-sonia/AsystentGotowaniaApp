@@ -16,10 +16,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.example.sonia.asystentgotowania.Constants;
 import com.example.sonia.asystentgotowania.R;
@@ -31,6 +33,7 @@ import com.example.sonia.asystentgotowania.onerecipe.listening.CommandsRecogniti
 import com.example.sonia.asystentgotowania.onerecipe.reading.MyJSONhelper;
 import com.example.sonia.asystentgotowania.onerecipe.reading.MyReader;
 import com.example.sonia.asystentgotowania.onerecipe.recipefromlink.RecipeFromLink;
+import com.example.sonia.asystentgotowania.onerecipe.questions.QuestionsListener;
 import com.jakewharton.picasso.OkHttp3Downloader;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
@@ -68,8 +71,6 @@ public class RecipeActivity extends AppCompatActivity {
     Button mbtnEdit;
     @BindView(R.id.btnSave)
     Button mbtnSave;
-//    @BindView(R.id.btnAllRecipeMenu)
-//    Button mbtnAllRecipeMenu;
 
 
     @BindDrawable(R.drawable.ic_pause_r)
@@ -80,6 +81,13 @@ public class RecipeActivity extends AppCompatActivity {
     Drawable editingIcon;
     @BindDrawable(R.drawable.check_mark_f)
     Drawable checkmarkIcon;
+    @BindDrawable(R.drawable.mic_r)
+    Drawable micIcon;
+    @BindDrawable(R.drawable.cross_r)
+    Drawable crossIcon;
+    @BindDrawable(R.drawable.question_r)
+    Drawable questionIcon;
+
 
 
     //variable necessary while saving - if less than 0 recipe is inserted,
@@ -92,9 +100,11 @@ public class RecipeActivity extends AppCompatActivity {
     String mPictureURL;
     String mPictureTitle;
     Target mTarget;
+    private boolean questionMode;
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
 
     CommandsRecognitionListener mCommandsRecognitionListener;
+    QuestionsListener mQuestionsListener;
     MyReader mmyReader;
     Observer mStatusObserver = new Observer() {
         @Override
@@ -135,9 +145,11 @@ public class RecipeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i(TAG, "Recipe Activity create");
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         setContentView(R.layout.view_recipe);
         ButterKnife.bind(this);
+        questionMode = false;
         editable = false;
 
         //microfone permission
@@ -147,6 +159,7 @@ public class RecipeActivity extends AppCompatActivity {
             return;
         }
 
+        Toast.makeText(this, "przygotowuję pliki...", Toast.LENGTH_LONG).show();
         new putRecipeInView().execute();
         mCommandsRecognitionListener = new CommandsRecognitionListener(getApplicationContext());
     }
@@ -167,6 +180,23 @@ public class RecipeActivity extends AppCompatActivity {
             Intent i = new Intent(getApplicationContext(), AllRecipesActivity.class);
             startActivity(i);
             finish();
+            return true;
+
+        } else if (id == R.id.btnQuetsions) {
+            if (questionMode) {
+                mQuestionsListener.stop();
+                mCommandsRecognitionListener.resume();
+                questionMode = false;
+                item.setIcon(questionIcon);
+                mbtnPlayPause.setBackground(mplayIcon);
+            } else {
+                mCommandsRecognitionListener.pause();
+                mmyReader.pauseReading();
+                mQuestionsListener.start();
+                questionMode = true;
+                item.setIcon(crossIcon);
+                mbtnPlayPause.setBackground(micIcon);
+            }
             return true;
         }
 
@@ -242,6 +272,7 @@ public class RecipeActivity extends AppCompatActivity {
 
             mCommandsRecognitionListener.setOnGoThread(mRunnableGo, mRunnableStop,
                     mRunnableIng, mRunnablePrep, mRunnableAll);
+            mQuestionsListener = new QuestionsListener(getApplicationContext(), mIngredientsText, mPreparationText);
         }
     }
 
@@ -253,14 +284,19 @@ public class RecipeActivity extends AppCompatActivity {
         if (mCommandsRecognitionListener != null) {
             mCommandsRecognitionListener.destroy();
         }
+        mQuestionsListener.finish();
     }
 
     @OnClick(R.id.btnPlayPause)
     public void readText() {
-        Log.i(TAG, "readText");
-        if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_NOT_SPEAKING) {
+        if (questionMode){
+            Log.i(TAG, "ask question");
+            mQuestionsListener.ask();
+        } else if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_NOT_SPEAKING) {
+            Log.i(TAG, "readText");
             mmyReader.read();
         } else if (mmyReader.getmMyReaderStatus() == MyReader.STATUS_SPEAKING) {
+            Log.i(TAG, "pauseText");
             mmyReader.pauseReading();
         }
     }

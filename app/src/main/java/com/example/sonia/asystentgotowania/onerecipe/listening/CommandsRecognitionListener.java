@@ -94,6 +94,16 @@ public class CommandsRecognitionListener implements RecognitionListener {
         }
     }
 
+    public void pause(){
+        Log.d(TAG, "on pause");
+        mRecognizer.stop();
+    }
+
+    public void resume() {
+        Log.d(TAG, "resuming to work");
+        switchSearch(SEARCH_KEYWORDS);
+    }
+
     @Override
     public void onBeginningOfSpeech() {
     }
