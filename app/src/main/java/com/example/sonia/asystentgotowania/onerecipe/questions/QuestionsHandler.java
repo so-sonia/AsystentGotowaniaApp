@@ -1,10 +1,15 @@
 package com.example.sonia.asystentgotowania.onerecipe.questions;
+
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.example.sonia.asystentgotowania.Constants;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -171,8 +176,20 @@ public class QuestionsHandler {
         String questionWords = mQuestion.replaceAll("\\W{1,}", " ")
                 .replaceAll("\\b.*?(\\bgr\\b|gram|litr|potrzeb|ile|łyże|szklan|jak|" +
                         "dużo|jest|będzie|\\b(mi|nam|się|czy)\\b|przyda).*?\\b", "")
-                .replaceAll("^\\s{1,}|\\s{1,}$", "")
-                .replaceAll("\\s{1,}", "|");
+                .replaceAll("^\\s{1,}|\\s{1,}$", "");
+        String[] qwords = questionWords.split("\\s{1,}");
+        List<String> list = new ArrayList<String>(Arrays.asList(qwords));
+        for( int i = 0; i < list.size(); i++) {
+            if (list.get(i).length() < 3 )
+            {
+                list.remove(i);
+                i--;
+            } else {
+                list.set(i, list.get(i).substring(0, Math.max( list.get(i).length()-3, Math.min(3,  list.get(i).length()))));
+            }
+        }
+        questionWords = TextUtils.join("|",  list.toArray());
+        // .replaceAll("\\s{1,}", "|");
         Log.d(TAG, "questionWords = " + questionWords);
         if (!"".equals(questionWords)){
             Pattern p = Pattern.compile("[^.\\n]*(" + questionWords + ")[^.\\n]*");
